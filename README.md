@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Event Ticket & Reservation System
+
+A full-stack web application for managing event tickets and reservations built with **Next.js**, **TypeScript**, **Tailwind CSS**, and **MongoDB Atlas**.
+
+## Tech Stack
+
+- **Frontend & Backend:** Next.js (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Database:** MongoDB Atlas (M0 cluster)
+- **ODM:** Mongoose
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- MongoDB Atlas connection string
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/mahmoudaudi/event-ticket.git
+cd event-ticket
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Edit `.env.local` and add your MongoDB connection string:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/event_ticket_db
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Then run:
 
-## Learn More
+```bash
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Endpoints
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Method | Endpoint         | Description              |
+|--------|------------------|--------------------------|
+| GET    | `/api/health`    | Check database connection |
 
-## Deploy on Vercel
+## Database Schema
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Collections
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **users** — User accounts (USER / ADMIN roles)
+- **categories** — Event categories
+- **events** — Events with venue, date, status
+- **tickettypes** — Ticket tiers per event (VIP, Regular, Student)
+- **bookings** — Booking records with ticket items
+- **promocodes** — Discount codes
+- **payments** — Payment records
+- **seats** — Seat inventory per event (future)
+- **reservedseats** — Reserved seats per booking (future)
+
+## Project Structure
+
+```
+src/
+├── lib/           # Utilities (db connection)
+├── models/        # Mongoose models
+└── app/
+    ├── api/       # API routes
+    └── page.tsx   # Frontend page
+```
