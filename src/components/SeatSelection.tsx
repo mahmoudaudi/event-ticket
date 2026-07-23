@@ -1,7 +1,8 @@
 ﻿'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { saveCheckout } from '@/lib/checkoutStorage';
 
 interface Event {
   _id: string;
@@ -47,43 +48,8 @@ export function SeatSelection() {
   const [reservationError, setReservationError] = useState<string | null>(null);
   const [reserveLoading, setReserveLoading] = useState(false);
 
-  const fetchSeats = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/events/${eventId}/seats`);
-
-      if (!response.ok) {
-        setError('Unable to load event data. Please try again later.');
-        return;
-      }
-
-      const data = (await response.json()) as SeatApiResponse;
-
-      setEvent(data.event);
-      setSeats(
-        data.seats.map((seat) => ({
-          id: seat._id,
-          row: seat.row,
-          section: seat.section,
-          label: String(seat.seatNumber),
-          status: seat.status,
-          price: seat.price,
-        }))
-      );
-    } catch {
-      setError('Unable to load event data. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  }, [eventId]);
-
-  useEffect(() => {
-    void fetchSeats();
-  }, [fetchSeats]);
-
   const reserveSeats = async () => {
+    // kept for backward compatibility — do not call on Continue to checkout
     if (selectedSeatIds.length === 0) {
       setReservationError('Please select at least one seat.');
       return;
@@ -136,6 +102,78 @@ export function SeatSelection() {
       setReserveLoading(false);
     }
   };
+
+  const fetchSeats = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/events/${eventId}/seats`);
+
+      if (!response.ok) {
+        setError('Unable to load event data. Please try again later.');
+        return;
+      }
+
+      const data = (await response.json()) as SeatApiResponse;
+
+      setEvent(data.event);
+      setSeats(
+        data.seats.map((seat) => ({
+          id: seat._id,
+          row: seat.row,
+          section: seat.section,
+          label: String(seat.seatNumber),
+          status: seat.status,
+          price: seat.price,
+        }))
+      );
+    } catch {
+      setError('Unable to load event data. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  }, [eventId]);
+
+  useEffect(() => {
+    void fetchSeats();
+  }, [fetchSeats]);
+
+  const router = useRouter();
+
+  const handleContinueToCheckout = () => {
+    if (!event) {
+      setReservationError('Event data not loaded yet.');
+      return;
+    }
+
+    if (selectedSeats.length === 0) {
+      setReservationError('Please select at least one seat.');
+      return;
+    }
+
+    const payload = {
+      event: {
+        _id: event._id,
+        title: event.title,
+        venue: event.venue,
+        eventDate: event.eventDate,
+        startTime: event.startTime,
+        endTime: event.endTime,
+      },
+      seats: selectedSeats.map((s) => ({ id: s.id, row: s.row, section: s.section, label: s.label, price: s.price })),
+      subtotal,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      saveCheckout(payload);
+      router.push('/checkout');
+    } catch (e) {
+      setReservationError('Unable to proceed to checkout. Please try again.');
+    }
+  };
+  
 
   const seatLayout = useMemo(() => {
     return seats.reduce<Record<string, Seat[]>>((acc, seat) => {
@@ -208,7 +246,7 @@ export function SeatSelection() {
           <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.15)]">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-2xl font-semibold text-slate-900">Select your seats</h2>
+                <h2 className="text-4xl font-semibold tracking-tight text-slate-900">Select your seats</h2>
                 <p className="mt-2 text-sm text-slate-500">Tap any available seat in the map below.</p>
               </div>
               <div className="grid gap-2 sm:grid-cols-3">
@@ -271,7 +309,7 @@ export function SeatSelection() {
             <div className="space-y-4">
               <div>
                 <p className="text-sm uppercase tracking-[0.32em] text-slate-400">Order summary</p>
-                <h2 className="text-2xl font-semibold text-slate-900">Your selection</h2>
+                <h2 className="text-4xl font-semibold tracking-tight text-slate-900">Your selection</h2>
               </div>
               <div className="rounded-[1.75rem] border border-slate-200 bg-[#faf5ef] p-5">
                 <div className="flex items-center justify-between text-sm text-slate-500">
@@ -319,11 +357,11 @@ export function SeatSelection() {
 
             <button
               type="button"
-              disabled={reserveLoading}
-              onClick={reserveSeats}
+              disabled={selectedSeatIds.length === 0}
+              onClick={handleContinueToCheckout}
               className="mt-6 w-full rounded-[1.75rem] bg-amber-900 px-5 py-4 text-base font-semibold text-white shadow-[0_15px_35px_-20px_rgba(217,119,6,0.45)] transition hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {reserveLoading ? 'Reserving...' : 'Continue to checkout'}
+              Continue to checkout
             </button>
           </aside>
         </div>
