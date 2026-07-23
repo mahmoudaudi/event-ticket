@@ -90,6 +90,9 @@ export default function EventDetailPage({
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           </div>
+          <Link href="/" className="absolute top-4 left-4 md:top-6 md:left-6 z-10 w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-md flex items-center justify-center text-on-surface hover:text-primary transition-colors">
+            <span className="material-symbols-outlined text-xl">arrow_back</span>
+          </Link>
           <div className="absolute bottom-0 left-0 right-0 px-[16px] md:px-[40px] max-w-[1280px] mx-auto pb-8">
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[12px] leading-[16px] tracking-[0.05em] font-semibold border border-primary/20">{event.category}</span>
