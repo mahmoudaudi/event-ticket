@@ -1,85 +1,176 @@
 ﻿'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
 
-type Seat = {
+interface Event {
+  _id: string;
+  title: string;
+  venue: string;
+  eventDate: string;
+  startTime: string;
+  endTime: string;
+}
+
+interface Seat {
   id: string;
   row: string;
   section: string;
   label: string;
   status: 'AVAILABLE' | 'RESERVED';
   price: number;
-};
+}
 
-const seatLayout: Record<string, Seat[]> = {
-  A: [
-    { id: 'A1', row: 'A', section: 'VIP', label: '1', status: 'AVAILABLE', price: 180 },
-    { id: 'A2', row: 'A', section: 'VIP', label: '2', status: 'AVAILABLE', price: 180 },
-    { id: 'A3', row: 'A', section: 'VIP', label: '3', status: 'RESERVED', price: 180 },
-    { id: 'A4', row: 'A', section: 'VIP', label: '4', status: 'AVAILABLE', price: 180 },
-    { id: 'A5', row: 'A', section: 'VIP', label: '5', status: 'AVAILABLE', price: 180 },
-    { id: 'A6', row: 'A', section: 'VIP', label: '6', status: 'AVAILABLE', price: 180 },
-    { id: 'A7', row: 'A', section: 'VIP', label: '7', status: 'RESERVED', price: 180 },
-    { id: 'A8', row: 'A', section: 'VIP', label: '8', status: 'AVAILABLE', price: 180 },
-    { id: 'A9', row: 'A', section: 'VIP', label: '9', status: 'AVAILABLE', price: 180 },
-    { id: 'A10', row: 'A', section: 'VIP', label: '10', status: 'AVAILABLE', price: 180 },
-    { id: 'A11', row: 'A', section: 'VIP', label: '11', status: 'AVAILABLE', price: 180 },
-    { id: 'A12', row: 'A', section: 'VIP', label: '12', status: 'AVAILABLE', price: 180 },
-  ],
-  B: [
-    { id: 'B1', row: 'B', section: 'Premium', label: '1', status: 'AVAILABLE', price: 145 },
-    { id: 'B2', row: 'B', section: 'Premium', label: '2', status: 'AVAILABLE', price: 145 },
-    { id: 'B3', row: 'B', section: 'Premium', label: '3', status: 'RESERVED', price: 145 },
-    { id: 'B4', row: 'B', section: 'Premium', label: '4', status: 'AVAILABLE', price: 145 },
-    { id: 'B5', row: 'B', section: 'Premium', label: '5', status: 'AVAILABLE', price: 145 },
-    { id: 'B6', row: 'B', section: 'Premium', label: '6', status: 'AVAILABLE', price: 145 },
-    { id: 'B7', row: 'B', section: 'Premium', label: '7', status: 'RESERVED', price: 145 },
-    { id: 'B8', row: 'B', section: 'Premium', label: '8', status: 'AVAILABLE', price: 145 },
-    { id: 'B9', row: 'B', section: 'Premium', label: '9', status: 'AVAILABLE', price: 145 },
-    { id: 'B10', row: 'B', section: 'Premium', label: '10', status: 'AVAILABLE', price: 145 },
-    { id: 'B11', row: 'B', section: 'Premium', label: '11', status: 'AVAILABLE', price: 145 },
-    { id: 'B12', row: 'B', section: 'Premium', label: '12', status: 'AVAILABLE', price: 145 },
-  ],
-  C: [
-    { id: 'C1', row: 'C', section: 'Standard', label: '1', status: 'AVAILABLE', price: 115 },
-    { id: 'C2', row: 'C', section: 'Standard', label: '2', status: 'RESERVED', price: 115 },
-    { id: 'C3', row: 'C', section: 'Standard', label: '3', status: 'AVAILABLE', price: 115 },
-    { id: 'C4', row: 'C', section: 'Standard', label: '4', status: 'AVAILABLE', price: 115 },
-    { id: 'C5', row: 'C', section: 'Standard', label: '5', status: 'AVAILABLE', price: 115 },
-    { id: 'C6', row: 'C', section: 'Standard', label: '6', status: 'AVAILABLE', price: 115 },
-    { id: 'C7', row: 'C', section: 'Standard', label: '7', status: 'AVAILABLE', price: 115 },
-    { id: 'C8', row: 'C', section: 'Standard', label: '8', status: 'AVAILABLE', price: 115 },
-    { id: 'C9', row: 'C', section: 'Standard', label: '9', status: 'AVAILABLE', price: 115 },
-    { id: 'C10', row: 'C', section: 'Standard', label: '10', status: 'AVAILABLE', price: 115 },
-    { id: 'C11', row: 'C', section: 'Standard', label: '11', status: 'AVAILABLE', price: 115 },
-    { id: 'C12', row: 'C', section: 'Standard', label: '12', status: 'AVAILABLE', price: 115 },
-  ],
-  D: [
-    { id: 'D1', row: 'D', section: 'Standard', label: '1', status: 'AVAILABLE', price: 115 },
-    { id: 'D2', row: 'D', section: 'Standard', label: '2', status: 'AVAILABLE', price: 115 },
-    { id: 'D3', row: 'D', section: 'Standard', label: '3', status: 'AVAILABLE', price: 115 },
-    { id: 'D4', row: 'D', section: 'Standard', label: '4', status: 'AVAILABLE', price: 115 },
-    { id: 'D5', row: 'D', section: 'Standard', label: '5', status: 'RESERVED', price: 115 },
-    { id: 'D6', row: 'D', section: 'Standard', label: '6', status: 'AVAILABLE', price: 115 },
-    { id: 'D7', row: 'D', section: 'Standard', label: '7', status: 'AVAILABLE', price: 115 },
-    { id: 'D8', row: 'D', section: 'Standard', label: '8', status: 'AVAILABLE', price: 115 },
-    { id: 'D9', row: 'D', section: 'Standard', label: '9', status: 'AVAILABLE', price: 115 },
-    { id: 'D10', row: 'D', section: 'Standard', label: '10', status: 'AVAILABLE', price: 115 },
-    { id: 'D11', row: 'D', section: 'Standard', label: '11', status: 'AVAILABLE', price: 115 },
-    { id: 'D12', row: 'D', section: 'Standard', label: '12', status: 'AVAILABLE', price: 115 },
-  ],
-};
+interface ApiSeat {
+  _id: string;
+  row: string;
+  seatNumber: string | number;
+  section: string;
+  status: 'AVAILABLE' | 'RESERVED';
+  price: number;
+}
 
-const allSeats = Object.values(seatLayout).flat();
+interface SeatApiResponse {
+  event: Event;
+  seats: ApiSeat[];
+}
 
 export function SeatSelection() {
+  const params = useParams();
+  const eventId = params?.eventId ? (Array.isArray(params.eventId) ? params.eventId[0] : params.eventId) : 'demo-event';
+
+  const [event, setEvent] = useState<Event | null>(null);
+  const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reservationError, setReservationError] = useState<string | null>(null);
+  const [reserveLoading, setReserveLoading] = useState(false);
+
+  const fetchSeats = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/events/${eventId}/seats`);
+
+      if (!response.ok) {
+        setError('Unable to load event data. Please try again later.');
+        return;
+      }
+
+      const data = (await response.json()) as SeatApiResponse;
+
+      setEvent(data.event);
+      setSeats(
+        data.seats.map((seat) => ({
+          id: seat._id,
+          row: seat.row,
+          section: seat.section,
+          label: String(seat.seatNumber),
+          status: seat.status,
+          price: seat.price,
+        }))
+      );
+    } catch {
+      setError('Unable to load event data. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  }, [eventId]);
+
+  useEffect(() => {
+    void fetchSeats();
+  }, [fetchSeats]);
+
+  const reserveSeats = async () => {
+    if (selectedSeatIds.length === 0) {
+      setReservationError('Please select at least one seat.');
+      return;
+    }
+
+    setReservationError(null);
+    setReserveLoading(true);
+
+    try {
+      const response = await fetch(`/api/events/${eventId}/reserve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ seatIds: selectedSeatIds }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        if (data.success) {
+          setSeats((currentSeats) =>
+            currentSeats.map((seat) =>
+              selectedSeatIds.includes(seat.id) ? { ...seat, status: 'RESERVED' } : seat
+            )
+          );
+          setSelectedSeatIds([]);
+          setReservationError(null);
+          return;
+        }
+
+        setReservationError(data.message ?? 'Unable to reserve seats. Please try again.');
+        return;
+      }
+
+      if (response.status === 409) {
+        setReservationError('Some selected seats were just reserved by another customer.');
+        setSelectedSeatIds([]);
+        await fetchSeats();
+        return;
+      }
+
+      const responseData = await response.json().catch(() => null);
+      setReservationError(
+        responseData?.message ?? 'Unable to reserve seats. Please try again later.'
+      );
+    } catch {
+      setReservationError('Unable to reserve seats. Please try again.');
+    } finally {
+      setReserveLoading(false);
+    }
+  };
+
+  const seatLayout = useMemo(() => {
+    return seats.reduce<Record<string, Seat[]>>((acc, seat) => {
+      if (!acc[seat.row]) {
+        acc[seat.row] = [];
+      }
+
+      acc[seat.row].push(seat);
+      return acc;
+    }, {});
+  }, [seats]);
+
+  const groupedRows = useMemo(() => {
+    return Object.entries(seatLayout).sort(([a], [b]) => a.localeCompare(b));
+  }, [seatLayout]);
+
+  const formattedEventInfo = useMemo(() => {
+    if (!event) {
+      return '';
+    }
+
+    const formattedDate = new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date(event.eventDate));
+
+    return `${formattedDate} • ${event.startTime} - ${event.endTime}`;
+  }, [event]);
 
   const handleSeatClick = (id: string) => {
     setSelectedSeatIds((current) => (current.includes(id) ? current.filter((seatId) => seatId !== id) : [...current, id]));
   };
 
-  const selectedSeats = useMemo(() => allSeats.filter((seat) => selectedSeatIds.includes(seat.id)), [selectedSeatIds]);
+  const selectedSeats = useMemo(() => seats.filter((seat) => selectedSeatIds.includes(seat.id)), [seats, selectedSeatIds]);
   const subtotal = useMemo(() => selectedSeats.reduce((sum, seat) => sum + seat.price, 0), [selectedSeats]);
 
   return (
@@ -99,15 +190,15 @@ export function SeatSelection() {
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
                 <p className="text-xs uppercase tracking-[0.32em] text-slate-400">Event</p>
-                <p className="mt-3 text-lg font-semibold text-slate-900">Neon Nights</p>
+                <p className="mt-3 text-lg font-semibold text-slate-900">{loading ? 'Loading...' : event?.title ?? 'Event unavailable'}</p>
               </div>
               <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
                 <p className="text-xs uppercase tracking-[0.32em] text-slate-400">When</p>
-                <p className="mt-3 text-lg font-semibold text-slate-900">Oct 18, 2026</p>
+                <p className="mt-3 text-lg font-semibold text-slate-900">{loading ? 'Loading...' : event ? formattedEventInfo : 'Date unavailable'}</p>
               </div>
               <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
                 <p className="text-xs uppercase tracking-[0.32em] text-slate-400">Venue</p>
-                <p className="mt-3 text-lg font-semibold text-slate-900">Aurora Hall</p>
+                <p className="mt-3 text-lg font-semibold text-slate-900">{loading ? 'Loading...' : event?.venue ?? 'Venue unavailable'}</p>
               </div>
             </div>
           </div>
@@ -138,34 +229,40 @@ export function SeatSelection() {
                 STAGE
               </div>
               <div className="space-y-4">
-                {Object.entries(seatLayout).map(([row, rowSeats]) => (
-                  <div key={row} className="flex items-center gap-3">
-                    <span className="w-8 text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">{row}</span>
-                    <div className="grid flex-1 grid-cols-[repeat(12,_minmax(0,1fr))] gap-3">
-                      {rowSeats.map((seat) => {
-                        const isSelected = selectedSeatIds.includes(seat.id);
-                        const disabled = seat.status === 'RESERVED';
-                        const baseClass = disabled
-                          ? 'border-slate-200 bg-slate-300 text-slate-500 cursor-not-allowed'
-                          : isSelected
-                          ? 'border-amber-900 bg-amber-900 text-white shadow-[0_15px_35px_-20px_rgba(217,119,6,0.45)]'
-                          : 'border-slate-200 bg-white text-slate-900 hover:border-amber-300 hover:bg-amber-50';
+                {error ? (
+                  <p className="text-sm text-red-600">{error}</p>
+                ) : seats.length === 0 && !loading ? (
+                  <p className="text-sm text-slate-500">No seats available for this event.</p>
+                ) : (
+                  groupedRows.map(([row, rowSeats]) => (
+                    <div key={row} className="flex items-center gap-3">
+                      <span className="w-8 text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">{row}</span>
+                      <div className="grid flex-1 grid-cols-[repeat(12,_minmax(0,1fr))] gap-3">
+                        {rowSeats.map((seat) => {
+                          const isSelected = selectedSeatIds.includes(seat.id);
+                          const disabled = seat.status === 'RESERVED';
+                          const baseClass = disabled
+                            ? 'border-slate-200 bg-slate-300 text-slate-500 cursor-not-allowed'
+                            : isSelected
+                            ? 'border-amber-900 bg-amber-900 text-white shadow-[0_15px_35px_-20px_rgba(217,119,6,0.45)]'
+                            : 'border-slate-200 bg-white text-slate-900 hover:border-amber-300 hover:bg-amber-50';
 
-                        return (
-                          <button
-                            key={seat.id}
-                            type="button"
-                            disabled={disabled}
-                            onClick={() => handleSeatClick(seat.id)}
-                            className={`min-h-[3rem] rounded-3xl border px-2 text-sm font-semibold transition ${baseClass}`}
-                          >
-                            {seat.label}
-                          </button>
-                        );
-                      })}
+                          return (
+                            <button
+                              key={seat.id}
+                              type="button"
+                              disabled={disabled}
+                              onClick={() => handleSeatClick(seat.id)}
+                              className={`min-h-[3rem] rounded-3xl border px-2 text-sm font-semibold transition ${baseClass}`}
+                            >
+                              {seat.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </section>
@@ -216,8 +313,17 @@ export function SeatSelection() {
               </div>
             </div>
 
-            <button className="mt-6 w-full rounded-[1.75rem] bg-amber-900 px-5 py-4 text-base font-semibold text-white shadow-[0_15px_35px_-20px_rgba(217,119,6,0.45)] transition hover:bg-amber-800">
-              Continue to checkout
+            {reservationError ? (
+              <p className="mt-4 text-sm text-red-600">{reservationError}</p>
+            ) : null}
+
+            <button
+              type="button"
+              disabled={reserveLoading}
+              onClick={reserveSeats}
+              className="mt-6 w-full rounded-[1.75rem] bg-amber-900 px-5 py-4 text-base font-semibold text-white shadow-[0_15px_35px_-20px_rgba(217,119,6,0.45)] transition hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {reserveLoading ? 'Reserving...' : 'Continue to checkout'}
             </button>
           </aside>
         </div>
