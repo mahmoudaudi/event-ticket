@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["USER", "ADMIN"], default: "USER" },
     profileImage: String,
     isActive: { type: Boolean, default: true },
+    marketingConsent: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

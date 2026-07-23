@@ -16,10 +16,10 @@ export async function sendResetEmail(to: string, token: string) {
   await transporter.sendMail({
     from: process.env.SMTP_FROM,
     to,
-    subject: "Reset your EventPremium password",
+    subject: "Reset your Aurum password",
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;">
-        <h2 style="color:#735c00;">EventPremium</h2>
+        <h2 style="color:#735c00;">Aurum</h2>
         <p>You requested a password reset.</p>
         <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#735c00;color:#fff;text-decoration:none;border-radius:8px;">
           Reset Password
@@ -36,10 +36,10 @@ export async function sendOTPEmail(to: string, otp: string) {
   await transporter.sendMail({
     from: process.env.SMTP_FROM,
     to,
-    subject: "Your EventPremium OTP code",
+    subject: "Your Aurum OTP code",
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;">
-        <h2 style="color:#735c00;">EventPremium</h2>
+        <h2 style="color:#735c00;">Aurum</h2>
         <p>Use this code to reset your password:</p>
         <div style="font-size:32px;letter-spacing:8px;font-weight:700;color:#735c00;text-align:center;padding:24px;background:#f5eddf;border-radius:12px;margin:16px 0;">
           ${otp}

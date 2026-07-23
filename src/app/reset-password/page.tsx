@@ -3,6 +3,7 @@
 import { useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { AuthAlert } from "@/components/Toast";
 
 function ResetForm() {
   const searchParams = useSearchParams();
@@ -137,7 +138,7 @@ function ResetForm() {
           {showError("confirm") && <p className="text-[11px] text-error mt-1">{errors.confirm}</p>}
         </div>
 
-        {error && <p className="text-[11px] text-error text-center">{error}</p>}
+        {error && <AuthAlert message={error} type="error" />}
 
         <button type="submit" disabled={(submitted && hasErrors) || loading || !token}
           className="w-full bg-primary text-on-primary py-2 rounded-xl text-sm font-medium hover:brightness-110 active:brightness-95 transition-all cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
@@ -158,7 +159,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-display font-extrabold tracking-tight text-primary">
-            Event<span className="text-primary-container">Premium</span>
+            Aurum
           </Link>
         </div>
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib";
+import { connectDB } from "@/lib/db";
 import { Event, TicketType } from "@/models";
 
 export async function GET() {

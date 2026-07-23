@@ -6,7 +6,7 @@ import User from "@/models/User";
 
 export async function POST(req: NextRequest) {
   try {
-    const { firstName, lastName, email, password } = await req.json();
+    const { firstName, lastName, email, password, marketingConsent } = await req.json();
 
     if (!firstName?.trim() || !lastName?.trim() || !email || !password) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       lastName: lastName.trim(),
       email,
       password: hashedPassword,
+      marketingConsent: !!marketingConsent,
     });
 
     const token = jwt.sign(

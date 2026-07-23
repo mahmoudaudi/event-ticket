@@ -4,20 +4,14 @@ import { Subscriber } from "@/models";
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json();
+    const { phone } = await req.json();
 
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    if (!phone) {
+      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
     }
 
     await connectDB();
-
-    const exists = await Subscriber.findOne({ email });
-    if (exists) {
-      return NextResponse.json({ message: "Already subscribed" });
-    }
-
-    await Subscriber.create({ email });
+    await Subscriber.create({ phone });
 
     return NextResponse.json({ message: "Subscribed successfully" }, { status: 201 });
   } catch (error) {

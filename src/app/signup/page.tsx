@@ -2,18 +2,25 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { AuthAlert, useToast } from "@/components/Toast";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Errors = Record<string, string>;
 
 export default function SignupPage() {
+  const { login } = useAuth();
+  const { showToast } = useToast();
+  const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
 
@@ -55,13 +62,13 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, password }),
+        body: JSON.stringify({ firstName, lastName, email, password, marketingConsent }),
       });
       const data = await res.json();
       if (!res.ok) return setServerError(data.error);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      window.location.href = "/";
+      login(data.token, data.user);
+      showToast("Account created! Welcome to the family.", "success");
+      router.push("/");
     } catch {
       setServerError("Something went wrong. Please try again.");
     } finally {
@@ -94,7 +101,7 @@ export default function SignupPage() {
           }} />
         <div className="relative text-center max-w-md">
           <div className="text-6xl mb-6 font-display font-extrabold tracking-tight text-primary">
-            Event<span className="text-primary-container">Premium</span>
+            Aurum
           </div>
           <p className="text-lg text-on-surface-variant leading-relaxed">
             Join today and be the first to access extraordinary events curated just for you.
@@ -106,7 +113,7 @@ export default function SignupPage() {
         <div className="w-full max-w-sm">
           <div className="lg:hidden text-center mb-4">
             <Link href="/" className="text-2xl font-display font-extrabold tracking-tight text-primary">
-              Event<span className="text-primary-container">Premium</span>
+              Aurum
             </Link>
           </div>
 
@@ -180,7 +187,15 @@ export default function SignupPage() {
                 </span>
               </label>
 
-              {serverError && <p className="text-[11px] text-error text-center">{serverError}</p>}
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input type="checkbox" checked={marketingConsent} onChange={(e) => setMarketingConsent(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-outline-variant text-primary focus:ring-primary/20 cursor-pointer shrink-0" />
+                <span className="text-xs text-on-surface-variant leading-relaxed">
+                  I agree to receive latest event updates and offers via email
+                </span>
+              </label>
+
+              {serverError && <AuthAlert message={serverError} type="error" />}
 
               <button type="submit" disabled={!agreed || (submitted && hasErrors) || loading}
                 className="w-full bg-primary text-on-primary py-2 rounded-xl text-sm font-medium hover:brightness-110 active:brightness-95 transition-all cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">

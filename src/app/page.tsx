@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/Toast";
 
 const categories = ["All", "Tech", "Music", "Art", "Workshop"];
 const ITEMS_PER_PAGE = 4;
@@ -17,6 +20,8 @@ interface EventData {
 }
 
 export default function Home() {
+  const { user, login, logout } = useAuth();
+  const { showToast } = useToast();
   const [events, setEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
   const [eventName, setEventName] = useState("");
@@ -25,26 +30,39 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("Recommended");
   const [currentPage, setCurrentPage] = useState(1);
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-  const [subscribing, setSubscribing] = useState(false);
+  
   const [isSearching, setIsSearching] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const featuredRef = useRef<HTMLDivElement>(null);
   const discoverRef = useRef<HTMLHeadingElement>(null);
   const featuredSectionRef = useRef<HTMLDivElement>(null);
+  const categoriesRef = useRef<HTMLDivElement>(null);
+  const upcomingRef = useRef<HTMLDivElement>(null);
+  const popularRef = useRef<HTMLDivElement>(null);
   const eventsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/events")
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+
+    fetch("/api/events", { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
         setEvents(data.events ?? []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => setLoading(false))
+      .finally(() => clearTimeout(timeout));
+  }, []);
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const t = p.get("token");
+    const u = p.get("user");
+    if (t && u) { try { login(t, JSON.parse(u)); showToast("Welcome back!", "success"); } catch {} window.history.replaceState({}, "", "/"); }
   }, []);
 
   useEffect(() => {
@@ -94,38 +112,13 @@ export default function Home() {
 
   const handleFindTickets = () => {
     setIsSearching(true);
-    setTimeout(() => setIsSearching(false), 1500);
+    setTimeout(() => {
+      setIsSearching(false);
+      eventsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 800);
   };
 
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setSubscribing(true);
-    try {
-      const res = await fetch("/api/newsletter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (res.ok) {
-        setSubscribed(true);
-        setEmail("");
-        setTimeout(() => setSubscribed(false), 3000);
-      }
-    } catch {
-      /* ignore */
-    }
-    setSubscribing(false);
-  };
 
-  const handleDetails = (title: string) => {
-    alert(`Event: ${title}\n\nFull details coming soon!`);
-  };
-
-  const handleJoinNow = () => alert("Member Rewards — coming soon! Stay tuned.");
-  const handleComingSoon = (name: string) => alert(`"${name}" — coming soon!`);
-  const handleLogin = () => alert("Login page coming soon!");
-  const handleSignUp = () => alert("Sign up page coming soon!");
 
   const featuredEvents = events.slice(0, 2);
 
@@ -148,10 +141,13 @@ export default function Home() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-surface shadow-[0px_4px_20px_rgba(30,41,59,0.05)] h-20 flex items-center">
         <div className="flex justify-between items-center w-full px-[16px] md:px-[40px] max-w-[1280px] mx-auto h-20">
           <div className="flex items-center gap-[32px]">
-            <a className="text-[24px] leading-[32px] font-semibold font-headline font-bold text-primary" href="#">EventPremium</a>
+            <Link href="/" className="text-[24px] leading-[32px] font-semibold font-headline font-bold text-primary">Aurum</Link>
             <nav className="hidden md:flex items-center gap-6">
               <button onClick={() => scrollTo(discoverRef)} className="text-[14px] leading-[20px] tracking-[0.02em] font-medium text-primary border-b-2 border-primary pb-1 transition-colors duration-200 cursor-pointer">Discover</button>
               <button onClick={() => scrollTo(featuredSectionRef)} className="text-[14px] leading-[20px] tracking-[0.02em] font-medium text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer">Featured</button>
+              <button onClick={() => scrollTo(categoriesRef)} className="text-[14px] leading-[20px] tracking-[0.02em] font-medium text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer">Categories</button>
+              <button onClick={() => scrollTo(upcomingRef)} className="text-[14px] leading-[20px] tracking-[0.02em] font-medium text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer">Upcoming</button>
+              <button onClick={() => scrollTo(popularRef)} className="text-[14px] leading-[20px] tracking-[0.02em] font-medium text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer">Popular</button>
               <button onClick={() => scrollTo(eventsRef)} className="text-[14px] leading-[20px] tracking-[0.02em] font-medium text-on-surface-variant hover:text-primary transition-colors duration-200 cursor-pointer">Events</button>
             </nav>
           </div>
@@ -160,18 +156,90 @@ export default function Home() {
               <span className="material-symbols-outlined text-outline text-[20px]">search</span>
               <input value={eventName} onChange={e => setEventName(e.target.value)} className="bg-transparent border-none focus:ring-0 text-[14px] leading-[20px] w-48 ml-2 placeholder:text-outline outline-none" placeholder="Search events..." type="text" />
             </div>
-            <div className="flex items-center gap-4">
-              <button onClick={handleLogin} className="hidden sm:flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors text-[14px] leading-[20px] tracking-[0.02em] font-medium group cursor-pointer">
-                <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">login</span>
-                Login
-              </button>
-              <button onClick={handleSignUp} className="hidden sm:flex bg-primary text-on-primary px-6 py-2.5 rounded-full text-[14px] leading-[20px] tracking-[0.02em] font-medium shadow-sm hover:shadow-md hover:brightness-110 active:brightness-95 transition-all cursor-pointer">
-                Sign Up
+            <div className="flex items-center gap-2">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <span className="hidden sm:block text-[14px] leading-[20px] font-medium text-on-surface">
+                    {user.firstName} {user.lastName}
+                  </span>
+                  <button onClick={() => { logout(); showToast("Logged out successfully", "info"); }} className="text-sm text-on-surface-variant hover:text-error transition-colors cursor-pointer" title="Logout">
+                    <span className="material-symbols-outlined text-[20px]">logout</span>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Link href="/login" className="hidden sm:flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors text-[14px] leading-[20px] tracking-[0.02em] font-medium group">
+                    <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">login</span>
+                    Login
+                  </Link>
+                  <Link href="/signup" className="hidden sm:flex bg-primary text-on-primary px-6 py-2.5 rounded-full text-[14px] leading-[20px] tracking-[0.02em] font-medium shadow-sm hover:shadow-md hover:brightness-110 active:brightness-95 transition-all">
+                    Sign Up
+                  </Link>
+                </>
+              )}
+              <button onClick={() => setMobileMenuOpen(true)} className="sm:hidden flex items-center justify-center w-10 h-10 text-on-surface hover:text-primary transition-colors cursor-pointer" aria-label="Open menu">
+                <span className="material-symbols-outlined text-[24px]">menu</span>
               </button>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Mobile sidebar */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[100] sm:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute top-0 right-0 h-full w-80 bg-surface shadow-2xl p-6 flex flex-col overflow-y-auto">
+            <div className="flex justify-between items-center mb-8">
+              <span className="text-xl font-display font-extrabold tracking-tight text-primary">Aurum</span>
+              <button onClick={() => setMobileMenuOpen(false)} className="text-on-surface hover:text-primary transition-colors cursor-pointer p-1" aria-label="Close menu">
+                <span className="material-symbols-outlined text-[24px]">close</span>
+              </button>
+            </div>
+
+            <div className="flex items-center bg-surface-container rounded-full px-4 py-2.5 border border-outline-variant mb-6">
+              <span className="material-symbols-outlined text-outline text-[20px]">search</span>
+              <input value={eventName} onChange={e => setEventName(e.target.value)} className="bg-transparent border-none focus:ring-0 text-[14px] leading-[20px] w-full ml-2 placeholder:text-outline outline-none" placeholder="Search events..." type="text" />
+            </div>
+
+            <nav className="flex flex-col gap-1">
+              {[
+                { label: "Discover", icon: "explore", ref: discoverRef },
+                { label: "Featured", icon: "star", ref: featuredSectionRef },
+                { label: "Categories", icon: "category", ref: categoriesRef },
+                { label: "Upcoming", icon: "upcoming", ref: upcomingRef },
+                { label: "Popular", icon: "trending_up", ref: popularRef },
+                { label: "Events", icon: "event", ref: eventsRef },
+              ].map((item) => (
+                <button key={item.label} onClick={() => { setMobileMenuOpen(false); setTimeout(() => scrollTo(item.ref), 100); }} className="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-on-surface hover:bg-surface-container transition-colors text-left cursor-pointer">
+                  <span className="material-symbols-outlined text-outline">{item.icon}</span> {item.label}
+                </button>
+              ))}
+            </nav>
+
+            <div className="mt-8 pt-6 border-t border-outline-variant/30 space-y-3">
+              <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-on-surface hover:bg-surface-container transition-colors">
+                <span className="material-symbols-outlined text-outline">mail</span> Contact Us
+              </Link>
+              <Link href="/terms" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-on-surface hover:bg-surface-container transition-colors">
+                <span className="material-symbols-outlined text-outline">description</span> Terms of Service
+              </Link>
+              <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-on-surface hover:bg-surface-container transition-colors">
+                <span className="material-symbols-outlined text-outline">shield</span> Privacy Policy
+              </Link>
+            </div>
+
+            <div className="mt-auto pt-6 border-t border-outline-variant/30 space-y-3">
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 w-full border border-outline-variant text-on-surface py-2.5 rounded-xl text-sm font-medium hover:bg-surface-container transition-colors">
+                <span className="material-symbols-outlined text-lg">login</span> Sign In
+              </Link>
+              <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 w-full bg-primary text-on-primary py-2.5 rounded-xl text-sm font-medium hover:brightness-110 transition-all">
+                <span className="material-symbols-outlined text-lg">person_add</span> Sign Up
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="pt-20">
         {/* Announcement Ticker */}
@@ -211,7 +279,7 @@ export default function Home() {
             <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-primary-container/10 rounded-full blur-3xl animate-float" style={{ animationDelay: "-2s" }} />
           </div>
           <div className="relative z-10 w-full px-[16px] md:px-[40px] max-w-[1280px] mx-auto text-center scroll-reveal">
-            <h1 ref={discoverRef} className="text-[48px] leading-[56px] font-bold tracking-[-0.02em] font-display text-on-surface mb-[16px] max-w-3xl mx-auto">
+            <h1 ref={discoverRef} className="text-[32px] sm:text-[48px] leading-[40px] sm:leading-[56px] font-bold tracking-[-0.02em] font-display text-on-surface mb-[16px] max-w-3xl mx-auto">
               Extraordinary Moments, <span className="text-primary">Seamlessly</span> Reserved.
             </h1>
             <p className="text-[18px] leading-[28px] text-on-surface-variant mb-12 max-w-2xl mx-auto">
@@ -229,11 +297,8 @@ export default function Home() {
                 <span className="material-symbols-outlined text-primary">category</span>
                 <div className="text-left">
                   <label className="block text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-outline uppercase">Category</label>
-                  <select className="w-full bg-transparent border-none p-0 focus:ring-0 text-[16px] leading-[24px] font-medium outline-none appearance-none">
-                    <option>All Categories</option>
-                    <option>Tech Summit</option>
-                    <option>Gala Dinner</option>
-                    <option>Live Performance</option>
+                  <select value={activeCategory} onChange={e => { setActiveCategory(e.target.value); setCurrentPage(1); }} className="w-full bg-transparent border-none p-0 focus:ring-0 text-[16px] leading-[24px] font-medium outline-none appearance-none">
+                    {categories.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
               </div>
@@ -275,7 +340,7 @@ export default function Home() {
           </div>
           {loading ? (
             <div className="px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
-              <div className="min-w-[400px] md:min-w-[600px] aspect-[16/9] rounded-2xl animate-shimmer" />
+              <div className="min-w-[280px] sm:min-w-[400px] md:min-w-[600px] aspect-[16/9] rounded-2xl animate-shimmer" />
             </div>
           ) : featuredEvents.length === 0 ? (
             <div className="px-[16px] md:px-[40px] max-w-[1280px] mx-auto text-center py-12 text-on-surface-variant">
@@ -284,12 +349,14 @@ export default function Home() {
           ) : (
           <div ref={featuredRef} className="px-[16px] md:px-[40px] max-w-[1280px] mx-auto overflow-x-auto hide-scrollbar flex gap-[24px] scroll-reveal scroll-reveal-delay-1">
             {featuredEvents.map((ev) => (
-              <div key={ev._id} className="min-w-[400px] md:min-w-[600px] group cursor-pointer" onClick={() => handleDetails(ev.title)}>
+              <Link key={ev._id} href={`/events/${ev._id}`} className="min-w-[280px] sm:min-w-[400px] md:min-w-[600px] group block">
                 <div className="relative aspect-[16/9] rounded-2xl overflow-hidden mb-4">
                   {ev.img ? (
-                    <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={ev.title} src={ev.img} />
+                    <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={ev.title} src={ev.img} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/735c00/ffffff?text=Aurum'; }} />
                   ) : (
-                    <div className="w-full h-full bg-surface-container flex items-center justify-center text-outline">No Image</div>
+                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary-container/20 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-4xl text-primary/40">image</span>
+                    </div>
                   )}
                   <div className="absolute top-4 left-4 bg-primary text-on-primary text-[12px] leading-[16px] tracking-[0.05em] font-semibold px-4 py-1.5 rounded-full shadow-lg">Featured</div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -298,9 +365,134 @@ export default function Home() {
                     <h3 className="text-[24px] leading-[32px] font-semibold font-headline">{ev.title}</h3>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
+          )}
+        </section>
+
+        {/* Categories */}
+        <section ref={categoriesRef} className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
+          <div className="text-center mb-12 scroll-reveal">
+            <span className="text-primary text-[14px] leading-[20px] tracking-[0.02em] font-medium tracking-[0.2em] uppercase mb-2 block">Browse</span>
+            <h2 className="text-[30px] leading-[38px] tracking-[-0.01em] font-semibold font-headline text-on-surface">Event Categories</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 scroll-reveal scroll-reveal-delay-1">
+            {[
+              { name: "Tech", icon: "devices", gradient: "from-blue-600 to-blue-800", desc: "Innovation & digital" },
+              { name: "Music", icon: "music_note", gradient: "from-purple-600 to-purple-800", desc: "Live performances" },
+              { name: "Art", icon: "palette", gradient: "from-pink-600 to-pink-800", desc: "Exhibitions & design" },
+              { name: "Workshop", icon: "handyman", gradient: "from-amber-600 to-amber-800", desc: "Learn & create" },
+            ].map((cat) => (
+              <button
+                key={cat.name}
+                onClick={() => { setActiveCategory(cat.name); setCurrentPage(1); setTimeout(() => scrollTo(eventsRef), 100); }}
+                className={`group relative overflow-hidden rounded-2xl p-6 text-left text-white bg-gradient-to-br ${cat.gradient} transition-all duration-300 hover:scale-[1.03] hover:shadow-xl cursor-pointer`}
+              >
+                <span className="material-symbols-outlined text-3xl mb-3 block opacity-90 group-hover:scale-110 transition-transform">
+                  {cat.icon}
+                </span>
+                <h3 className="text-lg font-semibold font-headline mb-1">{cat.name}</h3>
+                <p className="text-sm text-white/70">{cat.desc}</p>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Upcoming Events */}
+        <section ref={upcomingRef} className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto bg-surface-container-low">
+          <div className="mb-10 scroll-reveal">
+            <span className="text-primary text-[14px] leading-[20px] tracking-[0.02em] font-medium tracking-[0.2em] uppercase mb-2 block">Don't Miss</span>
+            <h2 className="text-[30px] leading-[38px] tracking-[-0.01em] font-semibold font-headline text-on-surface">Upcoming Events</h2>
+          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1,2,3,4].map(i => <div key={i} className="h-48 rounded-2xl animate-shimmer" />)}
+            </div>
+          ) : events.length === 0 ? (
+            <p className="text-center text-on-surface-variant py-12">No upcoming events right now.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 scroll-reveal scroll-reveal-delay-1">
+              {events.slice(0, 4).map((ev) => (
+                <Link key={ev._id} href={`/events/${ev._id}`} className="group bg-surface-container-lowest rounded-2xl overflow-hidden premium-card-shadow">
+                  <div className="relative h-40">
+                    {ev.img ? (
+                      <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={ev.title} src={ev.img} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/735c00/ffffff?text=Aurum'; }} />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary-container/20 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-3xl text-primary/40">image</span>
+                      </div>
+                    )}
+                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur text-on-surface text-[11px] leading-[16px] font-semibold px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px] text-primary">calendar_today</span>
+                      {ev.date}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h4 className="text-[16px] leading-[24px] font-semibold font-headline text-on-surface mb-1 group-hover:text-primary transition-colors">{ev.title}</h4>
+                    <div className="flex items-center gap-1 text-[12px] leading-[16px] text-on-surface-variant">
+                      <span className="material-symbols-outlined text-[14px]">location_on</span>
+                      {ev.location}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-primary font-bold text-sm">${ev.price}</span>
+                      <span className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                        Book Now <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Popular Events */}
+        <section ref={popularRef} className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
+          <div className="mb-10 scroll-reveal">
+            <span className="text-primary text-[14px] leading-[20px] tracking-[0.02em] font-medium tracking-[0.2em] uppercase mb-2 block">Trending</span>
+            <h2 className="text-[30px] leading-[38px] tracking-[-0.01em] font-semibold font-headline text-on-surface">Popular Events</h2>
+          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {[1,2].map(i => <div key={i} className="h-56 rounded-2xl animate-shimmer" />)}
+            </div>
+          ) : events.length === 0 ? (
+            <p className="text-center text-on-surface-variant py-12">No popular events yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 scroll-reveal scroll-reveal-delay-1">
+              {events.slice(0, 2).map((ev) => (
+                <Link key={ev._id} href={`/events/${ev._id}`} className="group relative bg-surface-container-lowest rounded-2xl overflow-hidden premium-card-shadow flex flex-col sm:flex-row">
+                  <div className="relative sm:w-2/5 h-48 sm:h-auto">
+                    {ev.img ? (
+                      <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={ev.title} src={ev.img} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/735c00/ffffff?text=Aurum'; }} />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary-container/20 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-3xl text-primary/40">image</span>
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3 bg-error text-on-error text-[11px] leading-[16px] font-semibold px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">whatshot</span>
+                      Popular
+                    </div>
+                  </div>
+                  <div className="p-6 flex-1 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full">{ev.category}</span>
+                    </div>
+                    <h3 className="text-[20px] leading-[28px] font-semibold font-headline text-on-surface mb-2 group-hover:text-primary transition-colors">{ev.title}</h3>
+                    <p className="text-[14px] leading-[20px] text-on-surface-variant line-clamp-2 mb-4">{ev.description}</p>
+                    <div className="flex items-center justify-between mt-auto">
+                      <div className="flex items-center gap-3 text-[12px] leading-[16px] text-on-surface-variant">
+                        <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">location_on</span>{ev.location}</span>
+                        <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">calendar_today</span>{ev.date}</span>
+                      </div>
+                      <span className="text-primary font-bold text-base">${ev.price}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           )}
         </section>
 
@@ -344,7 +536,7 @@ export default function Home() {
                   <div className="relative z-10">
                     <h5 className="text-[24px] leading-[32px] font-semibold font-headline mb-2">Member Rewards</h5>
                     <p className="text-[14px] leading-[20px] opacity-90 mb-4">Join our Inner Circle for early access to global premieres.</p>
-                    <button onClick={handleJoinNow} className="w-full bg-white text-primary py-2 rounded-lg text-[14px] leading-[20px] tracking-[0.02em] font-medium cursor-pointer">Join Now</button>
+                    <Link href="/signup" className="block w-full bg-white text-primary py-2 rounded-lg text-[14px] leading-[20px] tracking-[0.02em] font-medium text-center hover:opacity-90 transition-opacity">Join Now</Link>
                   </div>
                 </div>
               </div>
@@ -387,12 +579,14 @@ export default function Home() {
                 <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] scroll-reveal">
                   {paginatedEvents.map((ev) => (
-                    <article key={ev._id} className="bg-surface-container-lowest rounded-2xl overflow-hidden premium-card-shadow flex flex-col">
+                    <Link key={ev._id} href={`/events/${ev._id}`} className="bg-surface-container-lowest rounded-2xl overflow-hidden premium-card-shadow flex flex-col">
                       <div className="relative h-48">
                         {ev.img ? (
-                          <img className="w-full h-full object-cover" alt={ev.title} src={ev.img} />
+                          <img className="w-full h-full object-cover" alt={ev.title} src={ev.img} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/735c00/ffffff?text=Aurum'; }} />
                         ) : (
-                          <div className="w-full h-full bg-surface-container flex items-center justify-center text-outline text-[14px]">No Image</div>
+                          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary-container/20 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-3xl text-primary/40">image</span>
+                          </div>
                         )}
                         <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-primary font-bold text-[14px] leading-[20px] shadow-sm">${ev.price}</div>
                       </div>
@@ -408,13 +602,13 @@ export default function Home() {
                             <span className="material-symbols-outlined text-outline text-[18px]">location_on</span>
                             <span className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant">{ev.location}</span>
                           </div>
-                          <button onClick={() => handleDetails(ev.title)} className="text-primary text-[14px] leading-[20px] tracking-[0.02em] font-medium flex items-center gap-1 group cursor-pointer">
-                            Details
-                            <span className="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                          </button>
+                            <span className="text-primary text-[14px] leading-[20px] tracking-[0.02em] font-medium flex items-center gap-1">
+                             Details
+                             <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                           </span>
                         </div>
                       </div>
-                    </article>
+                    </Link>
                   ))}
                 </div>
 
@@ -441,23 +635,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Newsletter */}
-        <section className="py-[80px] px-[16px] md:px-[40px]">
-          <div className="max-w-[1280px] mx-auto bg-inverse-surface rounded-3xl p-[32px] md:p-20 relative overflow-hidden text-center">
-            <div className="relative z-10 max-w-2xl mx-auto scroll-reveal">
-              <h2 className="text-[48px] leading-[56px] font-bold tracking-[-0.02em] font-display text-white mb-6">Stay Ahead of the Scene</h2>
-              <p className="text-[18px] leading-[28px] text-white/70 mb-10">Join 50,000+ tastemakers receiving exclusive early invitations and curated city guides every Tuesday.</p>
-              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3">
-                <input value={email} onChange={e => setEmail(e.target.value)} className="flex-1 px-6 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none" placeholder="Enter your email" type="email" required />
-                <button type="submit" disabled={subscribing} className="bg-primary text-on-primary px-10 py-4 rounded-xl text-[14px] leading-[20px] tracking-[0.02em] font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50">
-                  {subscribing ? "Subscribing..." : subscribed ? "Subscribed ✓" : "Subscribe Now"}
-                </button>
-              </form>
-              {subscribed && <p className="mt-4 text-[14px] leading-[20px] text-green-300">You&apos;re in! Welcome to the Inner Circle.</p>}
-              {!subscribed && <p className="mt-4 text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-white/40">Premium privacy. No spam, ever.</p>}
-            </div>
-          </div>
-        </section>
+
       </main>
 
       {/* Back to top */}
@@ -475,36 +653,32 @@ export default function Home() {
       <footer className="bg-surface-container-highest border-t border-outline-variant/30">
         <div className="w-full py-[80px] px-[16px] md:px-[40px] flex flex-col md:flex-row justify-between items-start md:items-center max-w-[1280px] mx-auto gap-8">
           <div className="flex flex-col gap-4">
-            <a className="text-[24px] leading-[32px] font-semibold font-headline font-bold text-on-surface" href="#">EventPremium</a>
+            <Link href="/" className="text-[24px] leading-[32px] font-semibold font-headline font-bold text-on-surface">Aurum</Link>
             <p className="text-[14px] leading-[20px] text-on-surface-variant max-w-xs">Connecting the world through curated, high-end experiences since 2024.</p>
             <div className="flex gap-4">
-              <a className="text-on-surface-variant hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined text-[20px]">public</span></a>
-              <a className="text-on-surface-variant hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined text-[20px]">share</span></a>
+
             </div>
           </div>
           <div className="flex flex-wrap gap-x-12 gap-y-8">
             <div className="flex flex-col gap-3">
               <h5 className="text-[14px] leading-[20px] tracking-[0.02em] font-medium text-on-surface font-bold uppercase tracking-widest">Platform</h5>
               <button onClick={() => scrollTo(eventsRef)} className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left cursor-pointer">Browse Events</button>
-              <button onClick={() => handleComingSoon("Venues")} className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left cursor-pointer">Venues</button>
-              <button onClick={() => handleComingSoon("Pricing")} className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left cursor-pointer">Pricing</button>
+
             </div>
             <div className="flex flex-col gap-3">
               <h5 className="text-[14px] leading-[20px] tracking-[0.02em] font-medium text-on-surface font-bold uppercase tracking-widest">Company</h5>
-              <button onClick={() => handleComingSoon("About Us")} className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left cursor-pointer">About Us</button>
-              <button onClick={() => handleComingSoon("Careers")} className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left cursor-pointer">Careers</button>
-              <button onClick={() => handleComingSoon("Contact Us")} className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left cursor-pointer">Contact Us</button>
+              <Link href="/contact" className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left">Contact Us</Link>
             </div>
             <div className="flex flex-col gap-3">
               <h5 className="text-[14px] leading-[20px] tracking-[0.02em] font-medium text-on-surface font-bold uppercase tracking-widest">Legal</h5>
-              <button onClick={() => handleComingSoon("Terms of Service")} className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left cursor-pointer">Terms of Service</button>
-              <button onClick={() => handleComingSoon("Privacy Policy")} className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left cursor-pointer">Privacy Policy</button>
-              <button onClick={() => handleComingSoon("Cookie Policy")} className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left cursor-pointer">Cookie Policy</button>
+              <Link href="/terms" className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left">Terms of Service</Link>
+              <Link href="/privacy" className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left">Privacy Policy</Link>
+              <Link href="/cookie-policy" className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold text-on-surface-variant hover:text-primary transition-colors text-left">Cookie Policy</Link>
             </div>
           </div>
         </div>
         <div className="px-[16px] md:px-[40px] py-8 border-t border-outline-variant/20 max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <span className="text-[14px] leading-[20px] text-on-surface-variant opacity-80">&copy; 2026 EventPremium. All rights reserved.</span>
+          <span className="text-[14px] leading-[20px] text-on-surface-variant opacity-80">&copy; 2026 Aurum. All rights reserved.</span>
         </div>
       </footer>
     </>

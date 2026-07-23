@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AuthAlert } from "@/components/Toast";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-display font-extrabold tracking-tight text-primary">
-            Event<span className="text-primary-container">Premium</span>
+            Aurum
           </Link>
         </div>
 
@@ -80,7 +81,7 @@ export default function ForgotPasswordPage() {
                     className="w-full px-3.5 py-2 rounded-xl border border-outline-variant bg-white/60 text-sm text-on-surface placeholder:text-outline/60 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/10" />
                 </div>
 
-                {error && <p className="text-[11px] text-error text-center">{error}</p>}
+                {error && <AuthAlert message={error} type="error" />}
 
                 <button onClick={() => handleSend("link")} disabled={loading || !email}
                   className="w-full bg-primary text-on-primary py-2 rounded-xl text-sm font-medium hover:brightness-110 active:brightness-95 transition-all cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">

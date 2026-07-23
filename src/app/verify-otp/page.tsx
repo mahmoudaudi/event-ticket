@@ -3,8 +3,11 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { AuthAlert } from "@/components/Toast";
 
 function VerifyOTPForm() {
+  const { login } = useAuth();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
 
@@ -22,8 +25,7 @@ function VerifyOTPForm() {
       });
       const data = await res.json();
       if (!res.ok) return setError(data.error);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      login(data.token, data.user);
       window.location.href = "/";
     } catch {
       setError("Something went wrong.");
@@ -46,7 +48,7 @@ function VerifyOTPForm() {
           type="text" inputMode="numeric" placeholder="000000" maxLength={6}
           className="w-full px-3.5 py-3 rounded-xl border border-outline-variant bg-white/60 text-on-surface placeholder:text-outline/60 outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/10 text-center text-2xl tracking-[10px]" />
 
-        {error && <p className="text-[11px] text-error text-center">{error}</p>}
+        {error && <AuthAlert message={error} type="error" />}
 
         <button onClick={verifyOTP} disabled={loading || otp.length !== 6}
           className="w-full bg-primary text-on-primary py-2 rounded-xl text-sm font-medium hover:brightness-110 active:brightness-95 transition-all cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
@@ -67,7 +69,7 @@ export default function VerifyOTPPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-display font-extrabold tracking-tight text-primary">
-            Event<span className="text-primary-container">Premium</span>
+            Aurum
           </Link>
         </div>
 

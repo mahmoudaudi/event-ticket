@@ -1,13 +1,24 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { AuthAlert, useToast } from "@/components/Toast";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Errors = Record<string, string>;
 
 export default function LoginPage() {
+  return <Suspense><LoginContent /></Suspense>;
+}
+
+function LoginContent() {
+  const { login } = useAuth();
+  const { showToast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -15,6 +26,20 @@ export default function LoginPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error) {
+      const messages: Record<string, string> = {
+        google_auth_failed: "Google auth failed. No code received.",
+        google_token_failed: "Failed to get token from Google.",
+        google_profile_failed: "Failed to fetch your Google profile.",
+        google_error: "Something went wrong with Google sign in.",
+      };
+      setServerError(messages[error] || "Google sign in failed.");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [searchParams]);
 
   const validate = useCallback((name: string, value: string): string => {
     switch (name) {
@@ -46,9 +71,9 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) return setServerError(data.error);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      window.location.href = "/";
+      login(data.token, data.user);
+      showToast("Welcome back!", "success");
+      router.push("/");
     } catch {
       setServerError("Something went wrong. Please try again.");
     } finally {
@@ -76,7 +101,7 @@ export default function LoginPage() {
           }} />
         <div className="relative text-center max-w-md">
           <div className="text-6xl mb-6 font-display font-extrabold tracking-tight text-primary">
-            Event<span className="text-primary-container">Premium</span>
+            Aurum
           </div>
           <p className="text-lg text-on-surface-variant leading-relaxed">
             Access the most exclusive corporate galas, tech summits, and cultural performances.
@@ -88,7 +113,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           <div className="lg:hidden text-center mb-4">
             <Link href="/" className="text-2xl font-display font-extrabold tracking-tight text-primary">
-              Event<span className="text-primary-container">Premium</span>
+              Aurum
             </Link>
           </div>
 
@@ -127,7 +152,7 @@ export default function LoginPage() {
                 {showError("password") && <p className="text-[11px] text-error mt-1">{errors.password}</p>}
               </div>
 
-              {serverError && <p className="text-[11px] text-error text-center">{serverError}</p>}
+              {serverError && <AuthAlert message={serverError} type="error" />}
 
               <button type="submit" disabled={(submitted && hasErrors) || loading}
                 className="w-full bg-primary text-on-primary py-2 rounded-xl text-sm font-medium hover:brightness-110 active:brightness-95 transition-all cursor-pointer shadow-sm disabled:opacity-40 disabled:cursor-not-allowed">
