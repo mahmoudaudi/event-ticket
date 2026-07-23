@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# user-uploaded event images
+/public/uploads/events/*
+!/public/uploads/events/.gitkeep
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -40,3 +44,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vscode/
+
+.vscode/

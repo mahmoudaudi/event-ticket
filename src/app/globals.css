@@ -1,26 +1,93 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens for Crescent Live's booking platform.
+ * Palette and type pairing are derived directly from the approved Stitch
+ * mockups (warm cream surfaces, deep olive-gold accent, brass highlight).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces */
+  --color-cream: #fff8f1;
+  --color-cream-alt: #fbf2e5;
+  --color-surface: #ffffff;
+  --color-charcoal: #2e2a22;
+
+  /* Borders */
+  --color-border: #e8dfce;
+  --color-border-strong: #d8cbaf;
+
+  /* Text */
+  --color-ink: #1a1611;
+  --color-ink-muted: #6b6355;
+  --color-ink-inverse: #fdf8ef;
+
+  /* Brand accent (buttons, links, active nav) */
+  --color-brand: #6b5500;
+  --color-brand-hover: #574600;
+  --color-brand-soft: #f3e9cf;
+
+  /* Secondary brass accent (badges, icons, highlights) */
+  --color-gold: #b8912a;
+  --color-gold-soft: #f6ecd2;
+
+  /* Status */
+  --color-success: #1f7a3b;
+  --color-success-soft: #e0f0e4;
+  --color-warning: #8a5a00;
+  --color-warning-soft: #fdecc8;
+  --color-danger: #b3261e;
+  --color-danger-soft: #fbe0de;
+  --color-info: #3d46b3;
+  --color-info-soft: #e9ecff;
+
+  --font-display: var(--font-manrope);
+  --font-body: var(--font-inter);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-cream: var(--color-cream);
+  --color-cream-alt: var(--color-cream-alt);
+  --color-surface: var(--color-surface);
+  --color-charcoal: var(--color-charcoal);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+  --color-ink-inverse: var(--color-ink-inverse);
+  --color-brand: var(--color-brand);
+  --color-brand-hover: var(--color-brand-hover);
+  --color-brand-soft: var(--color-brand-soft);
+  --color-gold: var(--color-gold);
+  --color-gold-soft: var(--color-gold-soft);
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-danger: var(--color-danger);
+  --color-danger-soft: var(--color-danger-soft);
+  --color-info: var(--color-info);
+  --color-info-soft: var(--color-info-soft);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+/* Visible keyboard focus ring across the app, incl. custom controls. */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
