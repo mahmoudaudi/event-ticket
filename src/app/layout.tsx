@@ -2,10 +2,35 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aurum.com";
+
 export const metadata: Metadata = {
-  title: "Aurum | Discover Exceptional Experiences",
+  title: {
+    default: "Aurum | Discover Exceptional Experiences",
+    template: "%s | Aurum",
+  },
   description:
     "Access the most exclusive corporate galas, tech summits, and cultural performances with the world's most refined event platform.",
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    type: "website",
+    siteName: "Aurum",
+    title: "Aurum | Discover Exceptional Experiences",
+    description:
+      "Access the most exclusive corporate galas, tech summits, and cultural performances with the world's most refined event platform.",
+    url: siteUrl,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aurum | Discover Exceptional Experiences",
+    description:
+      "Access the most exclusive corporate galas, tech summits, and cultural performances with the world's most refined event platform.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -25,6 +50,20 @@ export default function RootLayout({
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
+        />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Aurum",
+              url: siteUrl,
+              description: "Premium event ticket and reservation platform.",
+              foundingDate: "2024",
+            }),
+          }}
         />
       </head>
       <body className="bg-background text-on-surface font-body antialiased selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
