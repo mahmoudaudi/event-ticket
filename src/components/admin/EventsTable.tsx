@@ -203,7 +203,7 @@ export function EventsTable({ initialData }: EventsTableProps) {
         {data.events.length === 0 && <EmptyState searchTerm={search || undefined} title={search ? undefined : "No events yet"} description={search ? undefined : "Create your first event to get started."} />}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border px-5 py-4 text-sm text-ink-muted">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-4 text-sm text-ink-muted">
         <span>
           Showing {data.events.length === 0 ? 0 : (data.page - 1) * 10 + 1}–
           {(data.page - 1) * 10 + data.events.length} of {data.total} events

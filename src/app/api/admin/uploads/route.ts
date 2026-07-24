@@ -3,6 +3,7 @@ import { writeFile, unlink } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { requireAdmin } from "@/lib/guards";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
 // NOTE on storage strategy: images are written straight to the local
 // filesystem under `public/uploads/events`, which needs zero external
@@ -22,7 +23,7 @@ const ALLOWED_TYPES: Record<string, string> = {
   "image/webp": "webp",
 };
 
-export async function POST(request: Request) {
+export const POST = withErrorLogging(async (request: Request) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -58,9 +59,9 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ uploaded, errors }, { status: 201 });
-}
+});
 
-export async function DELETE(request: Request) {
+export const DELETE = withErrorLogging(async (request: Request) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -77,4 +78,4 @@ export async function DELETE(request: Request) {
   }
 
   return NextResponse.json({ success: true });
-}
+});

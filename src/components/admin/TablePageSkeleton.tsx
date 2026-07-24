@@ -10,11 +10,11 @@ interface TablePageSkeletonProps {
 export function TablePageSkeleton({ statCardCount = 0, rowCount = 6 }: TablePageSkeletonProps) {
   return (
     <>
-      <div className="border-b border-border px-8 py-6">
+      <div className="border-b border-border px-4 py-4 sm:px-8 sm:py-6">
         <Skeleton className="h-8 w-48" />
       </div>
 
-      <div className="flex flex-col gap-6 p-8">
+      <div className="flex flex-col gap-6 p-4 sm:p-8">
         {statCardCount > 0 && (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: statCardCount }).map((_, i) => (

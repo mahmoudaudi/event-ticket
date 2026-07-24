@@ -4,13 +4,14 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
 const schema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
 
-export async function PATCH(request: Request) {
+export const PATCH = withErrorLogging(async (request: Request) => {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -33,4 +34,4 @@ export async function PATCH(request: Request) {
   await user.save();
 
   return NextResponse.json({ success: true });
-}
+});

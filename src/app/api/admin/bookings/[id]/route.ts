@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/guards";
 import { getAdminBookingDetail, updateBookingStatus } from "@/lib/admin/bookings";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
 const statusSchema = z.object({ status: z.enum(["CONFIRMED", "CANCELLED"]) });
 
@@ -9,7 +10,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(_request: Request, { params }: RouteParams) {
+export const GET = withErrorLogging(async (_request: Request, { params }: RouteParams) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -17,9 +18,9 @@ export async function GET(_request: Request, { params }: RouteParams) {
   const booking = await getAdminBookingDetail(id);
   if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   return NextResponse.json(booking);
-}
+});
 
-export async function PATCH(request: Request, { params }: RouteParams) {
+export const PATCH = withErrorLogging(async (request: Request, { params }: RouteParams) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -37,4 +38,4 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   if (!updated) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
 
   return NextResponse.json({ success: true });
-}
+});

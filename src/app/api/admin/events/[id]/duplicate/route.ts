@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/guards";
 import { duplicateAdminEvent } from "@/lib/admin/events";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function POST(_request: Request, { params }: RouteParams) {
+export const POST = withErrorLogging(async (_request: Request, { params }: RouteParams) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -15,4 +16,4 @@ export async function POST(_request: Request, { params }: RouteParams) {
   if (!newId) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
   return NextResponse.json({ id: newId }, { status: 201 });
-}
+});

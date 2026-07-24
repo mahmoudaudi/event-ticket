@@ -150,7 +150,7 @@ export function UsersTable({ initialData, initialSearch = "" }: UsersTableProps)
         {data.users.length === 0 && <EmptyState searchTerm={search || undefined} />}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border px-5 py-4 text-sm text-ink-muted">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-4 text-sm text-ink-muted">
         <span>
           Showing {data.users.length === 0 ? 0 : (data.page - 1) * 10 + 1}–
           {(data.page - 1) * 10 + data.users.length} of {data.total} users

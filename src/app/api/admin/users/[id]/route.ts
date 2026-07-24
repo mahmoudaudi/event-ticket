@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/guards";
 import { updateAdminUser } from "@/lib/admin/users";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
 const updateSchema = z.object({
   role: z.enum(["USER", "ADMIN"]).optional(),
@@ -12,7 +13,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function PATCH(request: Request, { params }: RouteParams) {
+export const PATCH = withErrorLogging(async (request: Request, { params }: RouteParams) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -29,4 +30,4 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 400 });
   }
-}
+});

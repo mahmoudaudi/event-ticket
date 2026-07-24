@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/guards";
 import { getAdminActivityList } from "@/lib/admin/activity";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
-export async function GET(request: Request) {
+export const GET = withErrorLogging(async (request: Request) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -11,4 +12,4 @@ export async function GET(request: Request) {
 
   const result = await getAdminActivityList(page);
   return NextResponse.json(result);
-}
+});

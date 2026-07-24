@@ -3,16 +3,17 @@ import { requireAdmin } from "@/lib/guards";
 import { connectDB } from "@/lib/db";
 import { Category } from "@/models";
 import { getCategories } from "@/lib/admin/events";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
-export async function GET() {
+export const GET = withErrorLogging(async () => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const categories = await getCategories();
   return NextResponse.json({ categories });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withErrorLogging(async (request: Request) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -24,4 +25,4 @@ export async function POST(request: Request) {
   await connectDB();
   const category = await Category.create({ name: name.trim() });
   return NextResponse.json({ id: category._id.toString(), name: category.name }, { status: 201 });
-}
+});

@@ -12,7 +12,7 @@ export default async function NewEventPage() {
   return (
     <>
       <Topbar title="New Event" subtitle="Ticket tiers can be added once the event is created." />
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         <Card className="max-w-2xl">
           <EventForm mode="create" categories={categories} />
         </Card>

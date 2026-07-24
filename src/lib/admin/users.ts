@@ -70,12 +70,18 @@ export async function updateAdminUser(
   if (id === admin.id) throw new Error("You can't change your own account from this screen.");
 
   await connectDB();
+  const before = await User.findById(id);
+  if (!before) throw new Error("User not found");
+
   const user = await User.findByIdAndUpdate(id, updates, { new: true });
   if (!user) throw new Error("User not found");
 
   const targetName = `${user.firstName} ${user.lastName}`;
 
-  if (updates.role) {
+  // Only log what actually changed — comparing against the pre-update
+  // snapshot avoids a duplicate/misleading audit entry when a request is
+  // retried or re-submits the same value that was already set.
+  if (updates.role && updates.role !== before.role) {
     await logAdminActivity({
       adminId: admin.id,
       adminName: admin.name,
@@ -84,7 +90,7 @@ export async function updateAdminUser(
     });
   }
 
-  if (updates.isActive !== undefined) {
+  if (updates.isActive !== undefined && updates.isActive !== before.isActive) {
     const action: AdminActivityAction = updates.isActive ? "USER_REACTIVATED" : "USER_SUSPENDED";
     await logAdminActivity({
       adminId: admin.id,

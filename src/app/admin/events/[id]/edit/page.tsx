@@ -21,7 +21,7 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
   return (
     <>
       <Topbar title="Edit Event" subtitle={event.title} />
-      <div className="flex flex-col gap-6 p-8">
+      <div className="flex flex-col gap-6 p-4 sm:p-8">
         <Card className="max-w-2xl">
           <h2 className="mb-5 font-display text-lg font-bold text-ink">Event details</h2>
           <EventForm mode="edit" eventId={event.id} categories={categories} initialData={event} />

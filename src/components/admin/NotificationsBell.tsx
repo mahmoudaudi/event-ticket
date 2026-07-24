@@ -65,7 +65,7 @@ export function NotificationsBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-20 mt-2 w-80 rounded-lg border border-border bg-surface shadow-lg">
+        <div className="absolute right-0 top-full z-20 mt-2 w-[calc(100vw-2rem)] max-w-80 rounded-lg border border-border bg-surface shadow-lg">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <p className="text-sm font-semibold text-ink">Pending approvals</p>
             {data.count > 0 && <span className="text-xs text-ink-muted">{data.count} total</span>}

@@ -4,12 +4,12 @@ import { Card } from "@/components/ui/Card";
 export default function AdminDashboardLoading() {
   return (
     <>
-      <div className="border-b border-border px-8 py-6">
+      <div className="border-b border-border px-4 py-4 sm:px-8 sm:py-6">
         <Skeleton className="h-8 w-40" />
         <Skeleton className="mt-2 h-4 w-72" />
       </div>
 
-      <div className="flex flex-col gap-6 p-8">
+      <div className="flex flex-col gap-6 p-4 sm:p-8">
         <div className="flex justify-end">
           <Skeleton className="h-11 w-40" />
         </div>

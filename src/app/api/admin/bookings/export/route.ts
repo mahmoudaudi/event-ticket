@@ -3,8 +3,9 @@ import { requireAdmin } from "@/lib/guards";
 import { getAdminBookingsForExport, type BookingDateRange } from "@/lib/admin/bookings";
 import { toCsv } from "@/lib/csv";
 import { formatDate } from "@/lib/format";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
-export async function GET(request: Request) {
+export const GET = withErrorLogging(async (request: Request) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -35,4 +36,4 @@ export async function GET(request: Request) {
       "Content-Disposition": `attachment; filename="bookings-export-${new Date().toISOString().slice(0, 10)}.csv"`,
     },
   });
-}
+});

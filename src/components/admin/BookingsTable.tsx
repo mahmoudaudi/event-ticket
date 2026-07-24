@@ -190,7 +190,7 @@ export function BookingsTable({ initialData, initialStatus = "ALL" }: BookingsTa
       </div>
 
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between gap-4 border-b border-border bg-brand-soft px-5 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-brand-soft px-5 py-3">
           <p className="text-sm font-medium text-ink">
             {selectedIds.size} booking{selectedIds.size === 1 ? "" : "s"} selected
           </p>
@@ -294,7 +294,7 @@ export function BookingsTable({ initialData, initialStatus = "ALL" }: BookingsTa
         )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border px-5 py-4 text-sm text-ink-muted">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-4 text-sm text-ink-muted">
         <span>
           Showing {data.bookings.length === 0 ? 0 : (data.page - 1) * 10 + 1}–
           {(data.page - 1) * 10 + data.bookings.length} of {data.total} bookings

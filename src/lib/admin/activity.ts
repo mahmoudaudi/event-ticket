@@ -43,17 +43,21 @@ export interface AdminActivityListResponse {
   total: number;
 }
 
-/** Paginated audit log for the /admin/activity page. */
-export async function getAdminActivityList(page: number): Promise<AdminActivityListResponse> {
+/** Paginated audit log for the /admin/logs page. Pass `actions` to scope it (e.g. booking-only entries). */
+export async function getAdminActivityList(
+  page: number,
+  actions?: AdminActivityAction[]
+): Promise<AdminActivityListResponse> {
   await connectDB();
   const currentPage = Math.max(1, page);
+  const filter = actions && actions.length > 0 ? { action: { $in: actions } } : {};
 
   const [rows, total] = await Promise.all([
-    AdminActivity.find({})
+    AdminActivity.find(filter)
       .sort({ createdAt: -1 })
       .skip((currentPage - 1) * PAGE_SIZE)
       .limit(PAGE_SIZE),
-    AdminActivity.countDocuments({}),
+    AdminActivity.countDocuments(filter),
   ]);
 
   return {
@@ -68,4 +72,9 @@ export async function getAdminActivityList(page: number): Promise<AdminActivityL
     totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
     total,
   };
+}
+
+/** Booking-specific slice of the audit log (confirm/cancel actions only), for the Bookings page's Activity tab. */
+export async function getBookingActivityList(page: number): Promise<AdminActivityListResponse> {
+  return getAdminActivityList(page, ["BOOKING_CONFIRMED", "BOOKING_CANCELLED"]);
 }

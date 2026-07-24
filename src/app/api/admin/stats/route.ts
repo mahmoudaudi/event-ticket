@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/guards";
 import { getDashboardStats, DASHBOARD_RANGE_OPTIONS, type DashboardRangeDays } from "@/lib/admin/stats";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
-export async function GET(request: Request) {
+export const GET = withErrorLogging(async (request: Request) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -14,4 +15,4 @@ export async function GET(request: Request) {
 
   const stats = await getDashboardStats(range);
   return NextResponse.json(stats);
-}
+});

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/guards";
 import { getAdminBookingsList, type BookingDateRange } from "@/lib/admin/bookings";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
-export async function GET(request: Request) {
+export const GET = withErrorLogging(async (request: Request) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -14,4 +15,4 @@ export async function GET(request: Request) {
 
   const result = await getAdminBookingsList({ page, search, status, dateRange });
   return NextResponse.json(result);
-}
+});

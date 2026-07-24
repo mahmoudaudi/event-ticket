@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/guards";
 import { getAdminEventsList, createAdminEvent } from "@/lib/admin/events";
 import { eventInputSchema } from "@/lib/validation/event";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
-export async function GET(request: Request) {
+export const GET = withErrorLogging(async (request: Request) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -14,9 +15,9 @@ export async function GET(request: Request) {
 
   const result = await getAdminEventsList({ page, search, status });
   return NextResponse.json(result);
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withErrorLogging(async (request: Request) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -28,4 +29,4 @@ export async function POST(request: Request) {
 
   const id = await createAdminEvent(parsed.data, session.user.id);
   return NextResponse.json({ id }, { status: 201 });
-}
+});

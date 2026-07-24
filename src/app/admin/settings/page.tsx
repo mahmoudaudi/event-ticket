@@ -11,7 +11,7 @@ export default async function AdminSettingsPage() {
   return (
     <>
       <Topbar title="Settings" subtitle="Manage your admin account" />
-      <div className="flex flex-col gap-6 p-8">
+      <div className="flex flex-col gap-6 p-4 sm:p-8">
         <Card className="max-w-xl">
           <h2 className="mb-4 font-display text-lg font-bold text-ink">Profile</h2>
           <dl className="grid grid-cols-[100px_1fr] gap-y-2 text-sm">

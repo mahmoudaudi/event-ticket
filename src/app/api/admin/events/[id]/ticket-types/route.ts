@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/guards";
 import { createTicketType } from "@/lib/admin/events";
 import { ticketTypeInputSchema } from "@/lib/validation/event";
+import { withErrorLogging } from "@/lib/withErrorLogging";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function POST(request: Request, { params }: RouteParams) {
+export const POST = withErrorLogging(async (request: Request, { params }: RouteParams) => {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -20,4 +21,4 @@ export async function POST(request: Request, { params }: RouteParams) {
 
   const ticketTypeId = await createTicketType(id, parsed.data);
   return NextResponse.json({ id: ticketTypeId }, { status: 201 });
-}
+});

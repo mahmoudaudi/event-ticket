@@ -102,10 +102,12 @@ Protected by Edge middleware (`middleware.ts`) plus a server-side session check 
 |---|---|---|
 | Overview | `/admin` | Revenue/events/bookings/user KPIs with trend %, date-range selector (7/30/90 days), booking-volume chart, recent activity feed, loading skeleton |
 | Events | `/admin/events` | Search, status filter, capacity/revenue rollups, create/edit/delete, duplicate as draft, drag-and-drop image upload (multi-image, cover selection), per-event ticket tier management, empty states, loading skeleton |
-| Bookings | `/admin/bookings` | Search, status filter, date-range filter, confirm/cancel with confirmation dialog, booking detail modal, bulk select + bulk confirm/cancel, CSV export, empty states, loading skeleton |
+| Bookings | `/admin/bookings` | Three tabs — **Table** (search, status filter, date-range filter, confirm/cancel, detail modal, bulk actions, CSV export), **Calendar** (month view of events by date, click to edit), **Activity** (booking-specific audit trail: confirms/cancels) |
 | Users | `/admin/users` | Search, per-user booking count, role change, activate/suspend with confirmation dialog, empty states, loading skeleton |
-| Activity Log | `/admin/activity` | Full paginated audit trail of admin actions (booking confirms/cancels, role changes, suspensions) |
+| Logs | `/admin/logs` | Three tabs: **Admin Actions** (full audit trail, all action types), **Login Activity** (every sign-in attempt, success or failure, with reason), **Error Logs** (application errors read live from `logs/error.log`) |
 | Settings | `/admin/settings` | Admin profile, change password |
+
+> **Why Calendar/Activity live inside Bookings but Logs stays separate:** Calendar visualizes events by date and Activity shows booking-specific audit entries — both are naturally booking-context views. Login Activity and Error Logs aren't booking-specific (they're login attempts and application-wide errors), so nesting them under Bookings would be confusing; they stay in their own global Logs section instead. `/admin/calendar` and `/admin/activity` still exist as redirects to their new locations, so old links/bookmarks don't break.
 
 Both the topbar search box and notification bell are fully functional (not decorative):
 searching queries live events/users and navigates to the right screen; the bell surfaces
@@ -121,6 +123,9 @@ bookings awaiting confirmation with a live count badge.
 - **Audit log** (`AdminActivity` model) is a separate concern from the dashboard's "Recent Activity" feed: the dashboard feed reflects business events (new booking, new signup, new event) sourced live from those collections, while the audit log specifically records admin-initiated actions.
 - **Topbar search** (`GlobalSearch.tsx`) queries events and users live, and navigates straight to the right screen: an event result opens its edit page, a user result opens the Users table pre-filtered to that person (`/admin/users?search=...`).
 - **Topbar notifications** (`NotificationsBell.tsx`) surface bookings awaiting confirmation, with a live count badge and a "View all pending bookings" link that deep-links to `/admin/bookings?status=PENDING`.
+- **Error logging** (`src/lib/logger.ts` + `withErrorLogging.ts`): every `/api/admin/*` route is wrapped so any unexpected thrown error is caught, logged with a timestamp/message/stack trace/request context to `logs/error.log`, and turned into a clean 500 response instead of leaking a stack trace to the client or failing silently. View them at `/admin/logs` → Error Logs tab. Same local-filesystem caveat as image uploads: fine for local dev/traditional hosting, would need swapping for a hosted logging service (Sentry, Logtail, etc.) on serverless.
+- **Login activity audit trail** (`LoginActivity` model): every sign-in attempt is recorded — success, or a specific failure reason (`unknown_email`, `invalid_password`, `account_suspended`) — logged from the NextAuth `authorize()` callback in `src/lib/auth.ts`. Viewable at `/admin/logs` → Login Activity.
+- **Events calendar** (`/admin/bookings?view=calendar`): month view built from a pure date-grid helper (`src/lib/calendarGrid.ts`), showing each event on its date with a booking count and a status-colored dot; clicking an event opens its edit page directly. Navigation is URL-param driven (`?view=calendar&month=YYYY-MM`), so the whole tab stays server-rendered with no client JS needed.
 
 ## API Endpoints
 
@@ -148,7 +153,7 @@ bookings awaiting confirmation with a live count badge.
 | POST/DELETE | `/api/admin/uploads` | Upload / delete event images |
 | PATCH | `/api/admin/profile` | Change own password |
 
-All `/api/admin/*` routes are guarded server-side by `requireAdmin()` (`src/lib/guards.ts`), independent of the middleware.
+All `/api/admin/*` routes are guarded server-side by `requireAdmin()` (`src/lib/guards.ts`) and wrapped in `withErrorLogging()` (`src/lib/withErrorLogging.ts`), independent of the middleware.
 
 ## Database Schema
 
@@ -162,11 +167,18 @@ All `/api/admin/*` routes are guarded server-side by `requireAdmin()` (`src/lib/
 - **promocodes** — discount codes
 - **payments** — payment records
 - **adminactivity** — audit trail of admin-initiated actions (booking status changes, user role/active changes)
+- **loginactivity** — every sign-in attempt (success/failure + reason), regardless of role
 - **seats** / **reservedseats** — per-seat inventory (schema present for a possible future interactive seat map; **the current admin/booking data model uses general-admission `tickettypes`, not per-seat assignment** — if another branch implements seat selection against `seats`/`reservedseats`, that's a different inventory model and needs reconciling with this one before checkout is built on top of either)
+
+### Files (not database) generated at runtime
+
+- **`logs/error.log`** — newline-delimited JSON error log, written by `withErrorLogging()`. Gitignored (only `logs/.gitkeep` is tracked).
+- **`public/uploads/events/`** — uploaded event images. Gitignored (only `.gitkeep` is tracked).
 
 ## Known Limitations / Next Steps
 
 - **Image storage is local-disk**, not suitable for serverless deployment as-is (see note above).
+- **Error logs are also local-disk** (`logs/error.log`), same serverless caveat — swap for a hosted logging service if deployed there.
 - **ETS-20 scope**: this covers the admin-side upload experience. The public booking flow (browsing, checkout, e-tickets) is a separate, not-yet-built phase.
 - **Public site** (home page, event discovery, seat/ticket selection, checkout, user dashboard) is out of scope for this module — see the team's Jira board for that work.
 
@@ -176,20 +188,22 @@ All `/api/admin/*` routes are guarded server-side by `requireAdmin()` (`src/lib/
 src/
 ├── app/
 │   ├── admin/             # Admin dashboard pages (protected)
-│   │   ├── activity/       # Audit log page
-│   │   ├── bookings/
+│   │   ├── activity/       # Redirects to /admin/logs?tab=admin (legacy link support)
+│   │   ├── bookings/       # Tabbed: Table / Calendar / Activity
+│   │   ├── calendar/       # Redirects to /admin/bookings?view=calendar (legacy link support)
 │   │   ├── events/
+│   │   ├── logs/           # Tabbed: Admin Actions / Login Activity / Error Logs
 │   │   ├── settings/
 │   │   ├── users/
 │   │   └── loading.tsx     # Per-route loading skeletons
 │   ├── api/
-│   │   ├── admin/          # Admin REST endpoints
+│   │   ├── admin/          # Admin REST endpoints (all wrapped in withErrorLogging)
 │   │   ├── auth/           # NextAuth handler
 │   │   └── health/
 │   ├── login/
 │   └── page.tsx
 ├── components/
-│   ├── admin/              # Sidebar, Topbar, tables, charts, forms, modals
+│   ├── admin/              # Sidebar, Topbar, tables, charts, forms, modals, TabBar, AuditLogList, PageLinkPagination
 │   ├── auth/                # LoginForm
 │   ├── providers/           # Session + Toast providers (mounted at root layout)
 │   └── ui/                  # Button, Card, Badge, Modal, ConfirmDialog, EmptyState, Skeleton, Field
@@ -197,16 +211,31 @@ src/
 │   ├── useDebouncedFetch.ts # Debounced, abort-safe data fetching for search/filter tables
 │   └── useClickOutside.ts  # Closes dropdowns/popovers on outside click
 ├── lib/
-│   ├── admin/                # Shared query/mutation logic (stats, events, bookings, users, activity, search, notifications)
+│   ├── admin/                # Shared query/mutation logic:
+│   │   ├── stats.ts            #   dashboard KPIs
+│   │   ├── events.ts           #   event + ticket tier CRUD
+│   │   ├── bookings.ts         #   booking list/detail/status/export
+│   │   ├── users.ts            #   user list/role/active
+│   │   ├── activity.ts         #   admin action audit log (+ booking-scoped filter for the Bookings Activity tab)
+│   │   ├── logins.ts           #   login attempt audit log
+│   │   ├── logs.ts             #   reads logs/error.log for the UI
+│   │   ├── calendar.ts         #   events-by-month for the calendar page
+│   │   ├── search.ts           #   topbar quick search
+│   │   └── notifications.ts    #   topbar pending-booking bell
 │   ├── validation/            # Zod schemas (shared by client + API)
 │   ├── auth.ts / auth.config.ts  # NextAuth (edge-safe config split from DB-backed config)
 │   ├── guards.ts              # requireAdmin() for API routes
 │   ├── db.ts                  # Mongoose connection
 │   ├── password.ts            # bcrypt hashing
 │   ├── regex.ts                # Safe regex-escaping for search input
-│   └── csv.ts                  # CSV serialization for exports
-├── models/                     # Mongoose schemas
+│   ├── csv.ts                  # CSV serialization for exports
+│   ├── logger.ts               # File-based error logger (logs/error.log)
+│   ├── withErrorLogging.ts     # Route handler wrapper using logger.ts
+│   └── calendarGrid.ts         # Pure month-grid builder for the calendar page
+├── models/                     # Mongoose schemas (incl. AdminActivity, LoginActivity)
 └── types/                      # Shared TypeScript types
+logs/
+└── error.log                    # Generated at runtime, gitignored (only .gitkeep tracked)
 public/
 └── uploads/events/              # Uploaded event images (gitignored, kept out of version control)
 scripts/

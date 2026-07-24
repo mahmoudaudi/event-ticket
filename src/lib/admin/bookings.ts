@@ -183,6 +183,14 @@ export async function updateBookingStatus(
   if (!Types.ObjectId.isValid(id)) throw new Error("Invalid booking id");
   await connectDB();
 
+  const existing = await Booking.findById(id);
+  if (!existing) return null;
+
+  // Idempotent: a repeat call (double-click, retried request) with the same
+  // target status is a no-op — don't re-write the record or log a
+  // duplicate/misleading audit entry for something that didn't change.
+  if (existing.bookingStatus === status) return existing.bookingReference;
+
   const booking = await Booking.findByIdAndUpdate(id, { bookingStatus: status }, { new: true });
   if (!booking) return null;
 
@@ -206,10 +214,16 @@ export async function bulkUpdateBookingStatus(
   const validIds = ids.filter((id) => Types.ObjectId.isValid(id));
   const bookings = await Booking.find({ _id: { $in: validIds } });
 
-  await Booking.updateMany({ _id: { $in: validIds } }, { bookingStatus: status });
+  // Same idempotency guard as the single-booking path: skip any booking
+  // that's already in the target state instead of re-writing it and
+  // logging a no-op audit entry.
+  const changingBookings = bookings.filter((b) => b.bookingStatus !== status);
+  if (changingBookings.length === 0) return 0;
+
+  await Booking.updateMany({ _id: { $in: changingBookings.map((b) => b._id) } }, { bookingStatus: status });
 
   await Promise.all(
-    bookings.map((booking) =>
+    changingBookings.map((booking) =>
       logAdminActivity({
         adminId: admin.id,
         adminName: admin.name,
@@ -219,5 +233,5 @@ export async function bulkUpdateBookingStatus(
     )
   );
 
-  return bookings.length;
+  return changingBookings.length;
 }

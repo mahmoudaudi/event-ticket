@@ -56,7 +56,7 @@ export function GlobalSearch() {
   const hasResults = results.events.length > 0 || results.users.length > 0;
 
   return (
-    <div ref={containerRef} className="relative hidden sm:block">
+    <div ref={containerRef} className="relative w-full sm:w-64">
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
       <input
         type="search"
@@ -67,11 +67,11 @@ export function GlobalSearch() {
         }}
         onFocus={() => setIsOpen(true)}
         placeholder="Search events or users..."
-        className="w-64 rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-sm placeholder:text-ink-muted focus:border-brand"
+        className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-sm placeholder:text-ink-muted focus:border-brand"
       />
 
       {isOpen && hasQuery && (
-        <div className="absolute right-0 top-full z-20 mt-2 w-80 rounded-lg border border-border bg-surface py-2 shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-20 mt-2 rounded-lg border border-border bg-surface py-2 shadow-lg sm:left-auto sm:w-80">
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-ink-muted">
               <Loader2 className="h-4 w-4 animate-spin" />

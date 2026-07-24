@@ -31,7 +31,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     <>
       <Topbar title="Overview" subtitle="Welcome back. Here's what's happening today." />
 
-      <div className="flex flex-col gap-6 p-8">
+      <div className="flex flex-col gap-6 p-4 sm:p-8">
         <div className="flex justify-end">
           <DateRangeSelect />
         </div>
@@ -77,7 +77,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           <Card>
             <div className="mb-5 flex items-center justify-between">
               <h2 className="font-display text-lg font-bold text-ink">Recent Activity</h2>
-              <Link href="/admin/activity" className="text-xs font-semibold text-brand hover:underline">
+              <Link href="/admin/logs?tab=admin" className="text-xs font-semibold text-brand hover:underline">
                 View All Logs
               </Link>
             </div>

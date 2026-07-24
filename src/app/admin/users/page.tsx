@@ -16,7 +16,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   return (
     <>
       <Topbar title="User Management" subtitle="View customers and manage roles or access" />
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         <UsersTable initialData={initialData} initialSearch={search ?? ""} />
       </div>
     </>
