@@ -14,7 +14,7 @@ interface PopularEventsProps {
 
 export default function PopularEvents({ events, loading, popularRef }: PopularEventsProps) {
   return (
-    <section ref={popularRef} className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
+    <section ref={popularRef} id="popular" className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
       <div className="mb-10 scroll-reveal">
         <span className="text-primary text-[14px] leading-[20px] tracking-[0.02em] font-medium tracking-[0.2em] uppercase mb-2 block">Trending</span>
         <h2 className="text-[30px] leading-[38px] tracking-[-0.01em] font-semibold font-headline text-on-surface">Popular Events</h2>

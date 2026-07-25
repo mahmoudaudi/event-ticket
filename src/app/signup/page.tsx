@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { AuthAlert, useToast } from "@/components/Toast";
 
@@ -13,7 +12,6 @@ type Errors = Record<string, string>;
 export default function SignupPage() {
   const { login } = useAuth();
   const { showToast } = useToast();
-  const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -68,7 +66,6 @@ export default function SignupPage() {
       if (!res.ok) return setServerError(data.error);
       login(data.token, data.user);
       showToast("Account created! Welcome to the family.", "success");
-      router.push("/");
     } catch {
       setServerError("Something went wrong. Please try again.");
     } finally {

@@ -17,7 +17,7 @@ const cards = [
 
 export default function CategoryCards({ setActiveCategory, setCurrentPage, scrollTo, eventsRef, categoriesRef }: CategoryCardsProps) {
   return (
-    <section ref={categoriesRef} className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
+    <section ref={categoriesRef} id="categories" className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
       <div className="text-center mb-12 scroll-reveal">
         <span className="text-primary text-[14px] leading-[20px] tracking-[0.02em] font-medium tracking-[0.2em] uppercase mb-2 block">Browse</span>
         <h2 className="text-[30px] leading-[38px] tracking-[-0.01em] font-semibold font-headline text-on-surface">Event Categories</h2>

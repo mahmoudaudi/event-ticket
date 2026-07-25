@@ -14,7 +14,7 @@ interface UpcomingEventsProps {
 
 export default function UpcomingEvents({ events, loading, upcomingRef }: UpcomingEventsProps) {
   return (
-    <section ref={upcomingRef} className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto bg-surface-container-low">
+    <section ref={upcomingRef} id="upcoming" className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto bg-surface-container-low">
       <div className="mb-10 scroll-reveal">
         <span className="text-primary text-[14px] leading-[20px] tracking-[0.02em] font-medium tracking-[0.2em] uppercase mb-2 block">Don&apos;t Miss</span>
         <h2 className="text-[30px] leading-[38px] tracking-[-0.01em] font-semibold font-headline text-on-surface">Upcoming Events</h2>

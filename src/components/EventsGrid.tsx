@@ -30,7 +30,7 @@ export default function EventsGrid({
   sortBy, setSortBy, safePage, totalPages, currentPage, eventsRef,
 }: EventsGridProps) {
   return (
-    <section ref={eventsRef} className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
+    <section ref={eventsRef} id="events" className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
       <div className="flex flex-col lg:flex-row gap-[32px]">
         <aside className="w-full lg:w-64 flex-shrink-0">
           <div className="sticky top-24 space-y-8">

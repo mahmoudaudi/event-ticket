@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
       { expiresIn: "7d" }
     );
 
-    const clientUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/`);
+    const clientUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
     clientUrl.searchParams.set("token", token);
     clientUrl.searchParams.set(
       "user",

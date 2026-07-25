@@ -1,49 +1,71 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import { Event, TicketType } from "@/models";
+import { Event, TicketType, Booking } from "@/models";
 
-export async function GET() {
+async function enrichEvents(events: any[]) {
+  return Promise.all(
+    events.map(async (ev: any) => {
+      const ticketTypes = (await TicketType.find({ eventId: ev._id })
+        .sort({ price: 1 })
+        .limit(1)
+        .lean()) as any[];
+      return {
+        _id: ev._id.toString(),
+        title: ev.title,
+        description: ev.description,
+        category: (ev.categoryId as any)?.name || "General",
+        date: ev.eventDate
+          ? `${new Date(ev.eventDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()} • ${ev.startTime || "00:00"}`
+          : "",
+        location: [ev.city, ev.address].filter(Boolean).join(", ") || ev.venue || "TBD",
+        price: ticketTypes[0]?.price ?? 0,
+        img: ev.bannerImage || "",
+      };
+    })
+  );
+}
+
+export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const events = (await Event.find({ status: "PUBLISHED" })
-      .populate<{ categoryId: { _id: string; name: string } }>("categoryId", "name")
-      .sort({ eventDate: 1 })
-      .lean()) as any[];
+    const { searchParams } = new URL(request.url);
+    const featured = searchParams.get("featured") === "true";
+    const popular = searchParams.get("popular") === "true";
+    const upcoming = searchParams.get("upcoming") === "true";
 
-    const enriched = await Promise.all(
-      events.map(async (ev) => {
-        const ticketTypes = (await TicketType.find({ eventId: ev._id })
-          .sort({ price: 1 })
-          .limit(1)
-          .lean()) as any[];
-        const minPrice = ticketTypes[0]?.price ?? 0;
+    const populate = { path: "categoryId", select: "name" } as const;
+    const sort = { eventDate: 1 } as const;
 
-        const dateStr = ev.eventDate
-          ? new Date(ev.eventDate).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            }).toUpperCase()
-          : "";
+    if (popular) {
+      const popularIds = (await Booking.aggregate([
+        { $match: { bookingStatus: "CONFIRMED" } },
+        { $unwind: "$tickets" },
+        { $group: { _id: "$eventId", totalTickets: { $sum: "$tickets.quantity" } } },
+        { $sort: { totalTickets: -1 } },
+        { $limit: 10 },
+      ])) as { _id: any; totalTickets: number }[];
 
-        return {
-          _id: ev._id.toString(),
-          title: ev.title,
-          description: ev.description,
-          category: (ev.categoryId as any)?.name || "General",
-          date: `${dateStr} • ${ev.startTime || "00:00"}`,
-          location: [ev.city, ev.address].filter(Boolean).join(", ") || ev.venue || "TBD",
-          price: minPrice,
-          img: ev.bannerImage || "",
-        };
-      })
-    );
+      let popularEvents: any[] = [];
+      if (popularIds.length > 0) {
+        const ids = popularIds.map((p) => p._id);
+        popularEvents = (await Event.find({ _id: { $in: ids } }).populate(populate).lean()) as any[];
+        const idOrder = ids.map((id) => id.toString());
+        popularEvents.sort((a, b) => idOrder.indexOf(a._id.toString()) - idOrder.indexOf(b._id.toString()));
+      }
+      if (popularEvents.length === 0) {
+        popularEvents = (await Event.find({}).populate(populate).sort(sort).lean()) as any[];
+      }
+      return NextResponse.json({ events: await enrichEvents(popularEvents) });
+    }
 
-    return NextResponse.json({ events: enriched });
+    let filter: Record<string, any> = {};
+    if (featured) filter.isFeatured = true;
+    if (upcoming) filter.eventDate = { $gte: new Date() };
+
+    const events = (await Event.find(filter).populate(populate).sort(sort).limit(8).lean()) as any[];
+    return NextResponse.json({ events: await enrichEvents(events) });
   } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

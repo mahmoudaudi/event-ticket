@@ -165,3 +165,7 @@
 }
 .grid-enter > *:nth-child(1) { animation-delay: 0s; }
 .grid-enter > *:nth-child(2) { animation-delay: 0.1s; }
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}

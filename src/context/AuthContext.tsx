@@ -8,6 +8,7 @@ interface User {
   lastName: string;
   email: string;
   role: string;
+  profileImage?: string;
 }
 
 interface AuthContextType {
@@ -35,15 +36,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
     if (storedToken && storedUser) {
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-      }
+      fetch("/api/dashboard", { headers: { Authorization: `Bearer ${storedToken}` } })
+        .then((r) => {
+          if (!r.ok) throw new Error("invalid token");
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+        })
+        .catch(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = (newToken: string, newUser: User) => {

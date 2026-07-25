@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/Toast";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
@@ -10,8 +11,10 @@ import CategoryCards from "@/components/CategoryCards";
 import UpcomingEvents from "@/components/UpcomingEvents";
 import PopularEvents from "@/components/PopularEvents";
 import EventsGrid from "@/components/EventsGrid";
+import EventsMap from "@/components/EventsMap";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
+import MarqueeBar from "@/components/MarqueeBar";
 
 const categories = ["All", "Tech", "Music", "Art", "Workshop"];
 const ITEMS_PER_PAGE = 4;
@@ -22,10 +25,17 @@ interface EventData {
 }
 
 export default function Home() {
-  const { user, login, logout } = useAuth();
+  const { user, loading: authLoading, login, logout } = useAuth();
   const { showToast } = useToast();
-  const [events, setEvents] = useState<EventData[]>([]);
+  const [allEvents, setAllEvents] = useState<EventData[]>([]);
+  const [featuredEvents, setFeaturedEvents] = useState<EventData[]>([]);
+  const [popularEvents, setPopularEvents] = useState<EventData[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [popularLoading, setPopularLoading] = useState(true);
+  const [upcomingLoading, setUpcomingLoading] = useState(true);
+
   const [eventName, setEventName] = useState("");
   const [location, setLocation] = useState("");
   const [priceRange, setPriceRange] = useState(2500);
@@ -46,20 +56,35 @@ export default function Home() {
   const eventsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    fetch("/api/events", { signal: controller.signal })
-      .then((res) => res.json())
-      .then((data) => { setEvents(data.events ?? []); setLoading(false); })
-      .catch(() => setLoading(false))
-      .finally(() => clearTimeout(timeout));
+    fetch("/api/events")
+      .then((r) => r.json())
+      .then((d) => { setAllEvents(d.events ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+
+    fetch("/api/events?featured=true")
+      .then((r) => r.json())
+      .then((d) => setFeaturedEvents(d.events ?? []))
+      .catch(() => {})
+      .finally(() => setFeaturedLoading(false));
+
+    fetch("/api/events?popular=true")
+      .then((r) => r.json())
+      .then((d) => setPopularEvents(d.events ?? []))
+      .catch(() => {})
+      .finally(() => setPopularLoading(false));
+
+    fetch("/api/events?upcoming=true")
+      .then((r) => r.json())
+      .then((d) => setUpcomingEvents(d.events ?? []))
+      .catch(() => {})
+      .finally(() => setUpcomingLoading(false));
   }, []);
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const t = p.get("token");
     const u = p.get("user");
-    if (t && u) { try { login(t, JSON.parse(u)); showToast("Welcome back!", "success"); } catch {} window.history.replaceState({}, "", "/"); }
+    if (t && u) { try { login(t, JSON.parse(u)); window.history.replaceState({}, "", window.location.pathname); } catch {} }
   }, []);
 
   useEffect(() => {
@@ -81,7 +106,7 @@ export default function Home() {
   }, [loading]);
 
   useEffect(() => {
-    const fe = events.slice(0, 2);
+    const fe = allEvents.slice(0, 2);
     if (!autoScroll || !featuredRef.current || fe.length === 0) return;
     const interval = setInterval(() => {
       if (!featuredRef.current) return;
@@ -104,7 +129,7 @@ export default function Home() {
     setTimeout(() => { setIsSearching(false); eventsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, 800);
   };
 
-  const filteredEvents = events
+  const filteredEvents = allEvents
     .filter((ev) => {
       const matchName = !eventName || ev.title.toLowerCase().includes(eventName.toLowerCase());
       const matchLocation = !location || ev.location.toLowerCase().includes(location.toLowerCase());
@@ -129,7 +154,9 @@ export default function Home() {
         popularRef={popularRef} eventsRef={eventsRef}
       />
 
-      <main className="pt-20">
+      <MarqueeBar />
+
+      <main className="pt-[120px]">
         <Hero
           discoverRef={discoverRef}
           eventName={eventName} setEventName={setEventName}
@@ -140,7 +167,7 @@ export default function Home() {
         />
 
         <FeaturedCarousel
-          events={events} loading={loading}
+          events={allEvents} loading={loading}
           featuredSectionRef={featuredSectionRef} featuredRef={featuredRef}
           autoScroll={autoScroll} setAutoScroll={setAutoScroll}
         />
@@ -150,8 +177,8 @@ export default function Home() {
           scrollTo={scrollTo} eventsRef={eventsRef} categoriesRef={categoriesRef}
         />
 
-        <UpcomingEvents events={events} loading={loading} upcomingRef={upcomingRef} />
-        <PopularEvents events={events} loading={loading} popularRef={popularRef} />
+        <UpcomingEvents events={upcomingEvents} loading={upcomingLoading} upcomingRef={upcomingRef} />
+        <PopularEvents events={popularEvents} loading={popularLoading} popularRef={popularRef} />
 
         <EventsGrid
           filteredEvents={filteredEvents} paginatedEvents={paginatedEvents}
@@ -163,6 +190,15 @@ export default function Home() {
           safePage={safePage} totalPages={totalPages} currentPage={currentPage}
           eventsRef={eventsRef}
         />
+
+        <div className="flex justify-center pb-[48px] md:pb-[80px]">
+          <Link href="/events" className="bg-primary text-on-primary px-8 py-3 rounded-full text-[14px] leading-[20px] tracking-[0.02em] font-medium shadow-sm hover:shadow-md hover:brightness-110 active:brightness-95 transition-all flex items-center gap-2">
+            View All Events
+            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+          </Link>
+        </div>
+
+        <EventsMap />
       </main>
 
       <BackToTop show={showBackToTop} />

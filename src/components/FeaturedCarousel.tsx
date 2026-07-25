@@ -26,7 +26,7 @@ export default function FeaturedCarousel({
 
   return (
     <section
-      ref={featuredSectionRef}
+      ref={featuredSectionRef} id="featured"
       className="py-[80px] bg-surface-container-low overflow-hidden"
       onMouseEnter={() => setAutoScroll(false)}
       onMouseLeave={() => setAutoScroll(true)}
