@@ -16,36 +16,49 @@ function txt(host: string) {
   );
 }
 
-let connPromise: Promise<typeof mongoose> | null = null;
+/** Resolves a mongodb+srv:// URI to a plain mongodb:// URI, for environments where SRV lookups fail. */
+async function resolveSrvUri(uri: string): Promise<string> {
+  const m = uri.match(/^mongodb\+srv:\/\/(.+?)@(.+?)\/(.+)$/);
+  if (!m) return uri;
+  try {
+    const [srvRecords, txtRecords] = await Promise.all([
+      srv(`_mongodb._tcp.${m[2]}`),
+      txt(m[2]),
+    ]);
+    const hosts = srvRecords.map((r) => `${r.name}:${r.port}`);
+    const params = txtRecords.flat().join("&");
+    const db = m[3].includes("?") ? m[3] : `${m[3]}?ssl=true&retryWrites=true&w=majority&${params}`;
+    return `mongodb://${m[1]}@${hosts.join(",")}/${db}`;
+  } catch {
+    return uri;
+  }
+}
 
-export async function connectDB() {
-  if (connPromise) return connPromise;
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
 
-  const m = MONGODB_URI.match(/^mongodb\+srv:\/\/(.+?)@(.+?)\/(.+)$/);
+// Reuses a single pooled connection across Next.js hot reloads and serverless
+// invocations by caching it on `globalThis` (module-level state is reset on HMR).
+const globalForMongoose = globalThis as unknown as { mongooseCache?: MongooseCache };
+const cached: MongooseCache = globalForMongoose.mongooseCache ?? { conn: null, promise: null };
+globalForMongoose.mongooseCache = cached;
 
-  connPromise = (async () => {
-    let uri = MONGODB_URI;
-    if (m) {
-      try {
-        const [srvRecords, txtRecords] = await Promise.all([
-          srv(`_mongodb._tcp.${m[2]}`),
-          txt(m[2]),
-        ]);
-        const hosts = srvRecords.map((r) => `${r.name}:${r.port}`);
-        const params = txtRecords.flat().join("&");
-        const db = m[3].includes("?") ? m[3] : `${m[3]}?ssl=true&retryWrites=true&w=majority&${params}`;
-        uri = `mongodb://${m[1]}@${hosts.join(",")}/${db}`;
-      } catch {
-        // fallback to original mongodb+srv:// URI
-      }
-    }
-    return mongoose.connect(uri, { serverSelectionTimeoutMS: 15000 });
-  })();
-
-  connPromise = connPromise.catch((err) => {
-    connPromise = null;
-    throw err;
-  });
-
-  return connPromise;
+/** Reuses a single pooled Mongoose connection across hot reloads and serverless invocations. */
+export async function connectDB(): Promise<typeof mongoose> {
+  if (cached.conn) return cached.conn;
+  if (!cached.promise) {
+    cached.promise = resolveSrvUri(MONGODB_URI)
+      .then((uri) => mongoose.connect(uri, { serverSelectionTimeoutMS: 15000 }))
+      .then((m) => {
+        cached.conn = m;
+        return m;
+      })
+      .catch((err) => {
+        cached.promise = null;
+        throw err;
+      });
+  }
+  return cached.promise;
 }

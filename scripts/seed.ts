@@ -1,158 +1,308 @@
+/**
+ * Seeds the database with sample data so the admin dashboard, events table,
+ * bookings table, and users table all have realistic content to display.
+ *
+ * Usage: npm run seed
+ * (reads MONGODB_URI from .env.local)
+ */
+import { config } from "dotenv";
+config({ path: ".env.local" });
 import mongoose from "mongoose";
-import { Category, User, Event, TicketType } from "../src/models";
+import { connectDB } from "../src/lib/db";
+import { hashPassword } from "../src/lib/password";
+import {
+  User,
+  Category,
+  Event,
+  TicketType,
+  Booking,
+  PromoCode,
+  Payment,
+} from "../src/models";
 
-const MONGODB_URI = process.env.MONGODB_URI!;
+/** Returns a Date offset by `days` from now (negative = past, positive = future). */
+function daysFromNow(days: number): Date {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+/** Deterministic-ish random integer in [min, max]. */
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 async function seed() {
-  if (!MONGODB_URI) {
-    console.error("MONGODB_URI not set. Run with: npx tsx --env-file=.env.local scripts/seed.ts");
-    process.exit(1);
-  }
-  await mongoose.connect(MONGODB_URI);
-  console.log("Connected to MongoDB");
+  await connectDB();
+  console.log("Connected to MongoDB. Clearing existing collections...");
 
-  // Clean existing data
   await Promise.all([
+    User.deleteMany({}),
     Category.deleteMany({}),
-    User.deleteMany({ email: "admin@eventpremium.com" }),
     Event.deleteMany({}),
     TicketType.deleteMany({}),
+    Booking.deleteMany({}),
+    PromoCode.deleteMany({}),
+    Payment.deleteMany({}),
   ]);
-  console.log("Cleaned existing data");
 
-  // Create categories
-  const categories = await Category.insertMany([
-    { name: "Tech", description: "Technology conferences and summits" },
-    { name: "Music", description: "Live performances and concerts" },
-    { name: "Art", description: "Exhibitions and gallery events" },
-    { name: "Workshop", description: "Hands-on learning experiences" },
-  ]);
-  console.log("Created categories");
+  // --- Users -----------------------------------------------------------
+  const adminPassword = await hashPassword("Admin123!");
+  const userPassword = await hashPassword("Password123!");
 
-  // Create admin user
   const admin = await User.create({
-    firstName: "Admin",
-    lastName: "EventPremium",
-    email: "admin@eventpremium.com",
-    password: "seed-password-placeholder",
+    firstName: "Alex",
+    lastName: "Rivera",
+    email: "admin@crescentlive.com",
+    password: adminPassword,
+    phone: "555-010-0001",
     role: "ADMIN",
-    isActive: true,
   });
-  console.log("Created admin user");
 
-  // Create events
-  const eventData = [
+  const customerNames = [
+    ["Jane", "Doe"],
+    ["Marcus", "Thorne"],
+    ["Elena", "Lopez"],
+    ["Sam", "Knight"],
+    ["Priya", "Nair"],
+    ["Omar", "Haddad"],
+  ];
+  const customers = await User.insertMany(
+    customerNames.map(([firstName, lastName], i) => ({
+      firstName,
+      lastName,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+      password: userPassword,
+      phone: `555-010-01${String(i + 1).padStart(2, "0")}`,
+      role: "USER",
+      createdAt: daysFromNow(-randomInt(1, 45)),
+    }))
+  );
+
+  console.log(`Created ${customers.length + 1} users.`);
+
+  // --- Categories --------------------------------------------------------
+  const categories = await Category.insertMany([
+    { name: "Concerts", description: "Live music performances" },
+    { name: "Comedy", description: "Stand-up and improv shows" },
+    { name: "Theater", description: "Plays and musical theater" },
+    { name: "Classical", description: "Orchestra and chamber music" },
+  ]);
+  const categoryByName = Object.fromEntries(categories.map((c) => [c.name, c]));
+
+  // --- Events + Ticket Types ----------------------------------------------
+  const eventDefs = [
     {
-      title: "Neon Horizon: Digital Art Expo",
-      description: "Explore the intersection of physical and digital realms in this exclusive curated exhibition featuring world-class artists.",
-      categoryId: categories[2]._id, // Art
-      venue: "Modern Art Wing",
-      address: "245 W 52nd St",
-      city: "New York, NY",
-      eventDate: new Date("2026-10-14"),
-      startTime: "19:00",
-      endTime: "23:00",
-      organizer: "Digital Arts Collective",
-      bannerImage: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800",
-      status: "PUBLISHED" as const,
-      createdBy: admin._id,
-      tickets: [
-        { name: "General Admission", price: 120, capacity: 200, remainingSeats: 150 },
-        { name: "VIP", price: 250, capacity: 50, remainingSeats: 30 },
+      title: "Neon Horizon Tour",
+      category: "Concerts",
+      venue: "Crescent Main Hall",
+      city: "Springfield",
+      daysOut: 18,
+      status: "PUBLISHED",
+      tiers: [
+        { name: "General Admission", price: 65, capacity: 300 },
+        { name: "VIP", price: 150, capacity: 60 },
       ],
     },
     {
-      title: "Venture Sky: Rooftop Mixer",
-      description: "Connect with industry leaders and innovative founders at our signature networking evening atop the Sapphire Tower.",
-      categoryId: categories[0]._id, // Tech
-      venue: "Sapphire Tower Rooftop",
-      address: "345 California St",
-      city: "San Francisco, CA",
-      eventDate: new Date("2026-10-16"),
-      startTime: "18:30",
-      endTime: "22:00",
-      organizer: "Venture Network",
-      bannerImage: "https://images.unsplash.com/photo-1519671480209-0e9e3f1c2b5e?w=800",
-      status: "PUBLISHED" as const,
-      createdBy: admin._id,
-      tickets: [
-        { name: "Standard", price: 250, capacity: 100, remainingSeats: 65 },
-        { name: "Premium", price: 500, capacity: 30, remainingSeats: 12 },
+      title: "Midnight Symphony: Evening Gala",
+      category: "Classical",
+      venue: "Crescent Main Hall",
+      city: "Springfield",
+      daysOut: 34,
+      status: "PUBLISHED",
+      tiers: [
+        { name: "Standard", price: 89, capacity: 200 },
+        { name: "Premium Balcony", price: 149, capacity: 40 },
       ],
     },
     {
-      title: "Design Mastery Workshop",
-      description: "Learn advanced UI principles and high-fidelity prototyping from leading creative directors at top global agencies.",
-      categoryId: categories[3]._id, // Workshop
-      venue: "Studio 45",
-      address: "Torstraße 45",
-      city: "Berlin",
-      eventDate: new Date("2026-10-22"),
-      startTime: "10:00",
-      endTime: "17:00",
-      organizer: "Design Masters Inc.",
-      bannerImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800",
-      status: "PUBLISHED" as const,
-      createdBy: admin._id,
-      tickets: [
-        { name: "Workshop Pass", price: 45, capacity: 30, remainingSeats: 18 },
-      ],
+      title: "Stand-Up Spotlight: Live Night",
+      category: "Comedy",
+      venue: "Crescent Black Box",
+      city: "Springfield",
+      daysOut: 9,
+      status: "PUBLISHED",
+      tiers: [{ name: "General Admission", price: 35, capacity: 150 }],
     },
     {
       title: "Chamber Harmony: Vivaldi Reimagined",
-      description: "A breathtaking evening of classical excellence performed by world-renowned soloists in an acoustically perfect hall.",
-      categoryId: categories[1]._id, // Music
-      venue: "Grand Concert Hall",
-      address: "87 Regent St",
-      city: "London",
-      eventDate: new Date("2026-10-28"),
-      startTime: "20:00",
-      endTime: "22:30",
-      organizer: "London Philharmonic Society",
-      bannerImage: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800",
-      status: "PUBLISHED" as const,
-      createdBy: admin._id,
-      tickets: [
-        { name: "Standard", price: 150, capacity: 300, remainingSeats: 200 },
-        { name: "Premium", price: 350, capacity: 100, remainingSeats: 45 },
-        { name: "Box Seat", price: 600, capacity: 20, remainingSeats: 5 },
+      category: "Classical",
+      venue: "Crescent Main Hall",
+      city: "Springfield",
+      daysOut: 52,
+      status: "PUBLISHED",
+      tiers: [{ name: "General Admission", price: 55, capacity: 220 }],
+    },
+    {
+      title: "Modern Prometheus: A New Play",
+      category: "Theater",
+      venue: "Crescent Black Box",
+      city: "Springfield",
+      daysOut: 27,
+      status: "PUBLISHED",
+      tiers: [
+        { name: "General Admission", price: 42, capacity: 120 },
+        { name: "Front Row", price: 78, capacity: 24 },
       ],
     },
     {
-      title: "Future of Intelligence 2024",
-      description: "Global Tech Summit exploring AI, machine learning, and the next frontier of intelligent systems.",
-      categoryId: categories[0]._id, // Tech
-      venue: "Moscone Center",
-      address: "747 Howard St",
-      city: "San Francisco, CA",
-      eventDate: new Date("2026-11-05"),
-      startTime: "09:00",
-      endTime: "18:00",
-      organizer: "TechForward Inc.",
-      bannerImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
-      status: "PUBLISHED" as const,
-      createdBy: admin._id,
-      tickets: [
-        { name: "Early Bird", price: 299, capacity: 500, remainingSeats: 320 },
-        { name: "General", price: 499, capacity: 1000, remainingSeats: 600 },
-      ],
+      title: "Evening Jazz Gala",
+      category: "Concerts",
+      venue: "Crescent Lounge",
+      city: "Springfield",
+      daysOut: 41,
+      status: "DRAFT",
+      tiers: [{ name: "General Admission", price: 48, capacity: 90 }],
     },
-  ];
+    {
+      title: "Gourmet Workshop",
+      category: "Theater",
+      venue: "Crescent Studio",
+      city: "Springfield",
+      daysOut: -12,
+      status: "PUBLISHED",
+      tiers: [{ name: "Workshop Seat", price: 75, capacity: 50 }],
+    },
+  ] as const;
 
-  for (const ev of eventData) {
-    const { tickets, ...eventFields } = ev;
-    const event = await Event.create(eventFields);
-    await TicketType.insertMany(
-      tickets.map((t) => ({ ...t, eventId: event._id }))
-    );
-    console.log(`Created event: ${event.title}`);
+  const events = [];
+  const ticketTypesByEvent: Record<string, mongoose.Document[]> = {};
+
+  for (const def of eventDefs) {
+    const event = await Event.create({
+      title: def.title,
+      description:
+        "Join us at Crescent Live Event Hall for an unforgettable night. Doors open one hour before showtime.",
+      categoryId: categoryByName[def.category]._id,
+      venue: def.venue,
+      address: "120 Riverside Ave",
+      city: def.city,
+      eventDate: daysFromNow(def.daysOut),
+      startTime: "8:00 PM",
+      endTime: "10:30 PM",
+      organizer: "Crescent Live Event Hall",
+      bannerImage: "",
+      images: [],
+      status: def.status,
+      createdBy: admin._id,
+      createdAt: daysFromNow(-randomInt(5, 60)),
+    });
+    events.push(event);
+
+    const tiers = [];
+    for (const tier of def.tiers) {
+      const sold = def.status === "PUBLISHED" ? randomInt(0, Math.floor(tier.capacity * 0.7)) : 0;
+      const ticketType = await TicketType.create({
+        eventId: event._id,
+        name: tier.name,
+        description: `${tier.name} access to ${def.title}`,
+        price: tier.price,
+        capacity: tier.capacity,
+        remainingSeats: tier.capacity - sold,
+      });
+      tiers.push(ticketType);
+    }
+    ticketTypesByEvent[event._id.toString()] = tiers;
   }
 
-  console.log("\nSeed complete!");
-  await mongoose.disconnect();
+  console.log(`Created ${events.length} events with ticket types.`);
+
+  // --- Promo codes ---------------------------------------------------------
+  await PromoCode.insertMany([
+    {
+      code: "WELCOME10",
+      description: "10% off your first booking",
+      discountType: "PERCENTAGE",
+      discountValue: 10,
+      minimumPurchase: 0,
+      maxUsage: 500,
+      usedCount: 42,
+      expiresAt: daysFromNow(90),
+      isActive: true,
+    },
+    {
+      code: "GALA25",
+      description: "$25 off gala events",
+      discountType: "FIXED",
+      discountValue: 25,
+      minimumPurchase: 100,
+      maxUsage: 100,
+      usedCount: 8,
+      expiresAt: daysFromNow(30),
+      isActive: true,
+    },
+  ]);
+
+  // --- Bookings + Payments (spread over the last 30 days for the trend chart) --
+  const publishedEvents = events.filter((e) => e.status === "PUBLISHED");
+  let bookingCounter = 1000;
+
+  for (let dayOffset = 29; dayOffset >= 0; dayOffset--) {
+    const bookingsToday = randomInt(0, 4);
+    for (let i = 0; i < bookingsToday; i++) {
+      const event = publishedEvents[randomInt(0, publishedEvents.length - 1)];
+      const tiers = ticketTypesByEvent[event._id.toString()];
+      const tier = tiers[randomInt(0, tiers.length - 1)] as unknown as { _id: mongoose.Types.ObjectId; price: number };
+      const customer = customers[randomInt(0, customers.length - 1)];
+      const quantity = randomInt(1, 4);
+      const subtotal = tier.price * quantity;
+      const bookingStatusRoll = Math.random();
+      const bookingStatus =
+        bookingStatusRoll < 0.08 ? "CANCELLED" : bookingStatusRoll < 0.18 ? "PENDING" : "CONFIRMED";
+      const paymentStatus = bookingStatus === "CONFIRMED" ? "PAID" : bookingStatus === "PENDING" ? "PENDING" : "FAILED";
+      const createdAt = daysFromNow(-dayOffset);
+      bookingCounter += 1;
+
+      const booking = await Booking.create({
+        bookingReference: `EP-${bookingCounter}`,
+        userId: customer._id,
+        eventId: event._id,
+        tickets: [
+          {
+            ticketTypeId: tier._id,
+            quantity,
+            unitPrice: tier.price,
+            totalPrice: subtotal,
+          },
+        ],
+        subtotal,
+        discount: 0,
+        total: subtotal,
+        paymentStatus,
+        bookingStatus,
+        qrCode: `QR-${bookingCounter}`,
+        createdBy: customer._id,
+        createdAt,
+        updatedAt: createdAt,
+      });
+
+      if (paymentStatus === "PAID") {
+        await Payment.create({
+          bookingId: booking._id,
+          paymentMethod: "MOCK",
+          paymentStatus: "PAID",
+          amount: subtotal,
+          transactionReference: `TXN-${bookingCounter}`,
+          paidAt: createdAt,
+          createdAt,
+        });
+      }
+    }
+  }
+
+  const totalBookings = await Booking.countDocuments();
+  console.log(`Created ${totalBookings} bookings across the last 30 days.`);
+
+  console.log("\nSeed complete.");
+  console.log("Admin login -> email: admin@crescentlive.com | password: Admin123!");
+  console.log("Sample user -> email: jane.doe@example.com | password: Password123!");
 }
 
-seed().catch((err) => {
-  console.error("Seed failed:", err);
-  process.exit(1);
-});
+seed()
+  .then(() => mongoose.connection.close())
+  .catch((error) => {
+    console.error("Seed failed:", error);
+    mongoose.connection.close();
+    process.exit(1);
+  });

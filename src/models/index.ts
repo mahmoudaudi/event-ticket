@@ -8,3 +8,5 @@ export { default as Payment } from "./Payment";
 export { default as Seat } from "./Seat";
 export { default as ReservedSeat } from "./ReservedSeat";
 export { default as Subscriber } from "./Subscriber";
+export { default as AdminActivity } from "./AdminActivity";
+export { default as LoginActivity } from "./LoginActivity";
