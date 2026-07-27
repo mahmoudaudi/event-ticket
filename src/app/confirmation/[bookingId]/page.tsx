@@ -62,6 +62,10 @@ export default function BookingConfirmationPage() {
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelSuccess, setCancelSuccess] = useState(false);
 
   useEffect(() => {
     if (!bookingId) {
@@ -81,7 +85,6 @@ export default function BookingConfirmationPage() {
         const data = await response.json();
         setBooking(data);
       } catch (err) {
-        console.error('Error fetching booking:', err);
         setError((err as Error).message || 'Failed to load booking');
       } finally {
         setLoading(false);
@@ -90,6 +93,42 @@ export default function BookingConfirmationPage() {
 
     fetchBooking();
   }, [bookingId]);
+
+  const handleCancelReservation = async () => {
+    setCancelLoading(true);
+    setCancelError(null);
+
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to cancel reservation');
+      }
+
+      const data = await response.json();
+
+      // Update booking status in the UI
+      setBooking((prev) =>
+        prev
+          ? { ...prev, bookingStatus: data.booking.bookingStatus }
+          : null
+      );
+
+      setCancelSuccess(true);
+      setShowCancelConfirm(false);
+
+      // Hide success message after 5 seconds
+      setTimeout(() => setCancelSuccess(false), 5000);
+    } catch (err) {
+      setCancelError((err as Error).message || 'Failed to cancel reservation');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -146,8 +185,17 @@ export default function BookingConfirmationPage() {
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <span className="cursor-pointer text-2xl font-bold text-amber-900">EventPremium</span>
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-amber-900">verified</span>
-            <span className="text-sm font-medium text-slate-600">Booking Confirmed</span>
+            {booking.bookingStatus === 'CANCELLED' ? (
+              <>
+                <span className="material-symbols-outlined text-red-600">cancel</span>
+                <span className="text-sm font-medium text-red-600">Booking Cancelled</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-amber-900">verified</span>
+                <span className="text-sm font-medium text-slate-600">Booking Confirmed</span>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -157,10 +205,10 @@ export default function BookingConfirmationPage() {
         {/* Success Animation */}
         <div className="mb-12 flex justify-center">
           <div className="relative w-32 h-32">
-            <div className="absolute inset-0 bg-amber-900/10 rounded-full animate-pulse"></div>
-            <div className="relative w-32 h-32 bg-gradient-to-br from-amber-900 to-amber-700 text-white rounded-full flex items-center justify-center shadow-lg">
+            <div className={`absolute inset-0 ${booking.bookingStatus === 'CANCELLED' ? 'bg-red-900/10' : 'bg-amber-900/10'} rounded-full animate-pulse`}></div>
+            <div className={`relative w-32 h-32 ${booking.bookingStatus === 'CANCELLED' ? 'bg-gradient-to-br from-red-900 to-red-700' : 'bg-gradient-to-br from-amber-900 to-amber-700'} text-white rounded-full flex items-center justify-center shadow-lg`}>
               <span className="material-symbols-outlined text-6xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                check_circle
+                {booking.bookingStatus === 'CANCELLED' ? 'cancel' : 'check_circle'}
               </span>
             </div>
           </div>
@@ -168,11 +216,23 @@ export default function BookingConfirmationPage() {
 
         {/* Success Message */}
         <div className="mb-12 text-center space-y-4">
-          <h1 className="text-4xl font-bold text-slate-900">Booking Confirmed!</h1>
-          <p className="text-lg text-slate-600">
-            Your reservation is secure. A confirmation email has been sent to{' '}
-            <span className="font-semibold text-slate-900">{booking.user?.email}</span>
-          </p>
+          {booking.bookingStatus === 'CANCELLED' ? (
+            <>
+              <h1 className="text-4xl font-bold text-slate-900">Reservation Cancelled</h1>
+              <p className="text-lg text-slate-600">
+                Your reservation has been cancelled. A cancellation confirmation email has been sent to{' '}
+                <span className="font-semibold text-slate-900">{booking.user?.email}</span>
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-4xl font-bold text-slate-900">Booking Confirmed!</h1>
+              <p className="text-lg text-slate-600">
+                Your reservation is secure. A confirmation email has been sent to{' '}
+                <span className="font-semibold text-slate-900">{booking.user?.email}</span>
+              </p>
+            </>
+          )}
         </div>
 
         {/* Main Content Grid */}
@@ -210,10 +270,18 @@ export default function BookingConfirmationPage() {
                       Booking Status
                     </span>
                     <div className="mt-2 flex items-center gap-2">
-                      <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
-                        <span className="material-symbols-outlined text-sm mr-1">calendar_check</span>
-                        {booking.bookingStatus === 'CONFIRMED' ? 'Confirmed' : booking.bookingStatus}
-                      </span>
+                      {booking.bookingStatus === 'CONFIRMED' && (
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                          <span className="material-symbols-outlined text-sm mr-1">calendar_check</span>
+                          Confirmed
+                        </span>
+                      )}
+                      {booking.bookingStatus === 'CANCELLED' && (
+                        <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">
+                          <span className="material-symbols-outlined text-sm mr-1">cancel</span>
+                          Cancelled
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -361,8 +429,50 @@ export default function BookingConfirmationPage() {
           </div>
         </div>
 
+        {/* Cancel Success Message */}
+        {cancelSuccess && (
+          <div className="mt-8 max-w-2xl mx-auto">
+            <div className="rounded-lg bg-green-50 border border-green-200 p-4 flex items-start gap-3">
+              <span className="material-symbols-outlined text-green-700 flex-shrink-0 mt-0.5">
+                check_circle
+              </span>
+              <div>
+                <h3 className="font-semibold text-green-900">Cancellation successful</h3>
+                <p className="text-sm text-green-800 mt-1">
+                  Your reservation has been cancelled and all reserved seats have been released.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel Error Message */}
+        {cancelError && (
+          <div className="mt-8 max-w-2xl mx-auto">
+            <div className="rounded-lg bg-red-50 border border-red-200 p-4 flex items-start gap-3">
+              <span className="material-symbols-outlined text-red-700 flex-shrink-0 mt-0.5">
+                error
+              </span>
+              <div>
+                <h3 className="font-semibold text-red-900">Cancellation failed</h3>
+                <p className="text-sm text-red-800 mt-1">{cancelError}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
+          {booking.bookingStatus === 'CONFIRMED' && (
+            <button
+              onClick={() => setShowCancelConfirm(true)}
+              disabled={cancelLoading}
+              className="px-8 py-3 border-2 border-red-600 text-red-600 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 font-semibold"
+            >
+              <span className="material-symbols-outlined">cancel</span>
+              {cancelLoading ? 'Cancelling...' : 'Cancel Reservation'}
+            </button>
+          )}
           <button
             onClick={() => {
               // Download ticket functionality (UI only for now)
@@ -388,6 +498,40 @@ export default function BookingConfirmationPage() {
             Return to Home
           </button>
         </div>
+
+        {/* Cancel Confirmation Dialog */}
+        {showCancelConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-red-600">warning</span>
+                </div>
+                <h2 className="text-xl font-bold text-slate-900">Cancel Reservation?</h2>
+              </div>
+              <p className="text-slate-600 mb-6">
+                Are you sure you want to cancel this reservation? This action cannot be undone, and all reserved seats will be released.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCancelConfirm(false)}
+                  disabled={cancelLoading}
+                  className="flex-1 px-4 py-2 border-2 border-slate-300 text-slate-900 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors font-semibold"
+                >
+                  Keep Reservation
+                </button>
+                <button
+                  onClick={handleCancelReservation}
+                  disabled={cancelLoading}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold flex items-center justify-center gap-2"
+                >
+                  {cancelLoading && <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>}
+                  {cancelLoading ? 'Cancelling...' : 'Cancel Reservation'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Help Section */}
         <div className="mt-12 max-w-2xl mx-auto text-center">
