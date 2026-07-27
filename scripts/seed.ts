@@ -284,7 +284,7 @@ async function seed() {
         total: subtotal,
         paymentStatus,
         bookingStatus,
-        qrCode: `QR-${bookingCounter}`,
+        qrCode: `/bookings/${booking._id}`,
         createdBy: customer._id,
         createdAt,
         updatedAt: createdAt,
