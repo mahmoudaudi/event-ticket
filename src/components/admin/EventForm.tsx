@@ -30,6 +30,7 @@ type FormState = {
   organizer: string;
   images: string[];
   status: "DRAFT" | "PUBLISHED" | "CANCELLED";
+  isFeatured: boolean;
 };
 
 const EMPTY_STATE: FormState = {
@@ -45,6 +46,7 @@ const EMPTY_STATE: FormState = {
   organizer: "Crescent Live Event Hall",
   images: [],
   status: "DRAFT",
+  isFeatured: false,
 };
 
 /** Create/edit form for an Event. On create, redirects to the edit page so ticket tiers can be added. */
@@ -66,6 +68,7 @@ export function EventForm({ mode, eventId, categories, initialData }: EventFormP
           organizer: initialData.organizer,
           images: initialData.images.length > 0 ? initialData.images : initialData.bannerImage ? [initialData.bannerImage] : [],
           status: initialData.status,
+          isFeatured: initialData.isFeatured ?? false,
         }
       : { ...EMPTY_STATE, categoryId: categories[0]?.id ?? "" }
   );
@@ -168,7 +171,7 @@ export function EventForm({ mode, eventId, categories, initialData }: EventFormP
         />
       </FieldWrapper>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
         <FieldWrapper label="Category" htmlFor="categoryId" error={errors.categoryId}>
           <Select
             id="categoryId"
@@ -197,6 +200,18 @@ export function EventForm({ mode, eventId, categories, initialData }: EventFormP
             <option value="PUBLISHED">Published</option>
             <option value="CANCELLED">Cancelled</option>
           </Select>
+        </FieldWrapper>
+
+        <FieldWrapper label="Featured">
+          <label className="flex items-center gap-3 cursor-pointer pt-2">
+            <input
+              type="checkbox"
+              checked={form.isFeatured}
+              onChange={(e) => update("isFeatured", e.target.checked)}
+              className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/30 cursor-pointer"
+            />
+            <span className="text-sm text-on-surface">Show in Featured Carousel</span>
+          </label>
         </FieldWrapper>
       </div>
 

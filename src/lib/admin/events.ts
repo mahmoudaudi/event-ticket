@@ -122,6 +122,7 @@ export async function getAdminEventDetail(id: string): Promise<AdminEventDetail 
     bannerImage: event.bannerImage ?? "",
     images: event.images ?? [],
     status: event.status,
+    isFeatured: event.isFeatured ?? false,
     ticketTypes: ticketTypes.map((t) => ({
       id: t._id.toString(),
       name: t.name,
@@ -147,6 +148,7 @@ export interface EventInput {
   bannerImage?: string;
   images?: string[];
   status: "DRAFT" | "PUBLISHED" | "CANCELLED";
+  isFeatured?: boolean;
 }
 
 export async function createAdminEvent(data: EventInput, createdBy: string) {

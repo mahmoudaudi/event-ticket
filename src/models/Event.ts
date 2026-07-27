@@ -15,6 +15,7 @@ const eventSchema = new mongoose.Schema(
     bannerImage: String,
     images: [String],
     status: { type: String, enum: ["DRAFT", "PUBLISHED", "CANCELLED"], default: "DRAFT" },
+    isFeatured: { type: Boolean, default: false },
     createdBy: { type: mongoose.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

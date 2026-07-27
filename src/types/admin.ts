@@ -152,5 +152,6 @@ export interface AdminEventDetail {
   bannerImage: string;
   images: string[];
   status: "DRAFT" | "PUBLISHED" | "CANCELLED";
+  isFeatured: boolean;
   ticketTypes: AdminTicketType[];
 }
