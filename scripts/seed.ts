@@ -11,6 +11,8 @@ import mongoose from "mongoose";
 import dns from "dns";
 dns.setDefaultResultOrder("ipv4first");
 import { connectDB } from "../src/lib/db";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 import { hashPassword } from "../src/lib/password";
 import {
   User,
@@ -290,7 +292,7 @@ async function seed() {
         updatedAt: createdAt,
       });
 
-      booking.qrCode = `/bookings/${booking._id}`;
+      booking.qrCode = `${BASE_URL}/bookings/${booking._id}`;
       await booking.save();
 
       if (paymentStatus === "PAID") {
