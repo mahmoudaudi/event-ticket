@@ -198,7 +198,7 @@ export default function DashboardPage() {
                               </p>
                             </div>
                           </div>
-                          <Link href={`/bookings/${booking.id}`} className="bg-primary-container text-on-primary-container px-6 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity inline-block text-center">
+                          <Link href={`/bookings/${booking.id}`} className="bg-amber-900 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-amber-800 transition-colors inline-block text-center">
                             View Details
                           </Link>
                         </div>
