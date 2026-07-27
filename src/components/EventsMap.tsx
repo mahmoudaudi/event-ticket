@@ -20,6 +20,12 @@ export default function EventsMap({ events }: { events?: EventData[] }) {
     );
   }
 
+  const locations = items
+    .map((e) => e.location)
+    .filter(Boolean)
+    .slice(0, 20)
+    .join(" | ");
+
   return (
     <section className="px-[16px] md:px-[40px] max-w-[1280px] mx-auto pb-[80px]">
       <h2 className="text-[30px] leading-[38px] tracking-[-0.01em] font-bold font-headline text-on-surface mb-8">Event Locations</h2>
@@ -30,7 +36,7 @@ export default function EventsMap({ events }: { events?: EventData[] }) {
           height="100%"
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
-          src={`https://www.google.com/maps?q=${encodeURIComponent(items[0]?.location || "World")}&output=embed`}
+          src={`https://www.google.com/maps?q=${encodeURIComponent(locations)}&output=embed`}
         />
       </div>
     </section>
