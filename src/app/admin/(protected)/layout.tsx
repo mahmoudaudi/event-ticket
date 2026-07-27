@@ -4,19 +4,19 @@ import { Sidebar } from "@/components/admin/Sidebar";
 import { MobileSidebarProvider } from "@/components/admin/MobileSidebarContext";
 
 /**
- * Wraps every route under /admin. The middleware already redirects
- * non-admins before this ever renders, but this server-side check is kept
- * as defense-in-depth in case the route is reached another way (e.g. a
- * server action or a future matcher change).
+ * Wraps every protected route under /admin (not /admin/login). The
+ * middleware already redirects non-admins before this ever renders, but
+ * this server-side check is kept as defense-in-depth in case the route is
+ * reached another way (e.g. a server action or a future matcher change).
  *
- * SessionProvider and ToastProvider are mounted once at the root layout
- * (`src/app/layout.tsx`) and cover this section automatically.
+ * SessionProvider and ToastProvider are mounted once at `src/app/admin/layout.tsx`
+ * and cover this whole admin section (including /admin/login).
  * MobileSidebarProvider is scoped here since only the admin shell needs it.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user || session.user.role !== "ADMIN") {
-    redirect("/login?callbackUrl=/admin");
+    redirect("/admin/login?callbackUrl=/admin");
   }
 
   return (
