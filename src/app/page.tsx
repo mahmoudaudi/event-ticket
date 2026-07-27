@@ -10,14 +10,10 @@ import FeaturedCarousel from "@/components/FeaturedCarousel";
 import CategoryCards from "@/components/CategoryCards";
 import UpcomingEvents from "@/components/UpcomingEvents";
 import PopularEvents from "@/components/PopularEvents";
-import EventsGrid from "@/components/EventsGrid";
 import EventsMap from "@/components/EventsMap";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import MarqueeBar from "@/components/MarqueeBar";
-
-const categories = ["All", "Tech", "Music", "Art", "Workshop"];
-const ITEMS_PER_PAGE = 4;
 
 interface EventData {
   _id: string; title: string; description: string; category: string;
@@ -35,13 +31,6 @@ export default function Home() {
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [popularLoading, setPopularLoading] = useState(true);
   const [upcomingLoading, setUpcomingLoading] = useState(true);
-
-  const [eventName, setEventName] = useState("");
-  const [location, setLocation] = useState("");
-  const [priceRange, setPriceRange] = useState(2500);
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [sortBy, setSortBy] = useState("Recommended");
-  const [currentPage, setCurrentPage] = useState(1);
 
   const [isSearching, setIsSearching] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -129,24 +118,9 @@ export default function Home() {
     setTimeout(() => { setIsSearching(false); eventsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }, 800);
   };
 
-  const filteredEvents = allEvents
-    .filter((ev) => {
-      const matchName = !eventName || ev.title.toLowerCase().includes(eventName.toLowerCase());
-      const matchLocation = !location || ev.location.toLowerCase().includes(location.toLowerCase());
-      const matchPrice = ev.price <= priceRange;
-      const matchCategory = activeCategory === "All" || ev.category === activeCategory;
-      return matchName && matchLocation && matchPrice && matchCategory;
-    })
-    .sort((a, b) => (sortBy === "Price: Low to High" ? a.price - b.price : 0));
-
-  const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
-  const safePage = Math.min(currentPage, Math.max(1, totalPages));
-  const paginatedEvents = filteredEvents.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
-
   return (
     <>
       <Navbar
-        eventName={eventName} setEventName={setEventName}
         user={user} logout={logout} showToast={showToast}
         scrollTo={scrollTo}
         discoverRef={discoverRef} featuredSectionRef={featuredSectionRef}
@@ -159,11 +133,7 @@ export default function Home() {
       <main className="pt-[120px]">
         <Hero
           discoverRef={discoverRef}
-          eventName={eventName} setEventName={setEventName}
-          activeCategory={activeCategory} setActiveCategory={setActiveCategory}
-          location={location} setLocation={setLocation}
           handleFindTickets={handleFindTickets} isSearching={isSearching}
-          categories={categories} setCurrentPage={setCurrentPage}
         />
 
         <FeaturedCarousel
@@ -173,23 +143,52 @@ export default function Home() {
         />
 
         <CategoryCards
-          setActiveCategory={setActiveCategory} setCurrentPage={setCurrentPage}
           scrollTo={scrollTo} eventsRef={eventsRef} categoriesRef={categoriesRef}
         />
 
         <UpcomingEvents events={upcomingEvents} loading={upcomingLoading} upcomingRef={upcomingRef} />
         <PopularEvents events={popularEvents} loading={popularLoading} popularRef={popularRef} />
 
-        <EventsGrid
-          filteredEvents={filteredEvents} paginatedEvents={paginatedEvents}
-          loading={loading}
-          priceRange={priceRange} setPriceRange={setPriceRange}
-          activeCategory={activeCategory} setActiveCategory={setActiveCategory}
-          setCurrentPage={setCurrentPage} categories={categories}
-          sortBy={sortBy} setSortBy={setSortBy}
-          safePage={safePage} totalPages={totalPages} currentPage={currentPage}
-          eventsRef={eventsRef}
-        />
+        <section ref={eventsRef} id="events" className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
+          <div className="flex justify-between items-center mb-8 scroll-reveal">
+            <h3 className="text-[24px] leading-[32px] font-semibold font-headline text-on-surface">All Events</h3>
+          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-2xl bg-surface-container-lowest overflow-hidden shadow-sm">
+                  <div className="h-48 bg-surface-container-highest animate-pulse" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-4 w-3/4 bg-surface-container-highest animate-pulse rounded" />
+                    <div className="h-3 w-1/2 bg-surface-container-highest animate-pulse rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {allEvents.slice(0, 8).map((ev, i) => (
+                <Link key={ev._id} href={`/events/${ev._id}`} className={`rounded-2xl bg-surface-container-lowest overflow-hidden shadow-sm hover:shadow-md transition-all duration-500 group scroll-reveal ${i >= 4 ? "reveal-delay-1" : ""}`}>
+                  <div className="h-48 overflow-hidden">
+                    {ev.img ? <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={ev.img} alt={ev.title} /> : <div className="w-full h-full bg-gradient-to-br from-primary-container to-tertiary-container flex items-center justify-center"><span className="material-symbols-outlined text-4xl text-on-primary-container">event</span></div>}
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant">{ev.category || "General"}</span>
+                      {ev.price > 0 && <span className="text-[12px] leading-[16px] tracking-[0.05em] font-semibold px-2 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant">${ev.price}</span>}
+                    </div>
+                    <h4 className="text-[16px] leading-[24px] font-medium text-on-surface mb-1 line-clamp-1">{ev.title}</h4>
+                    <p className="text-[14px] leading-[20px] text-on-surface-variant line-clamp-1">{ev.description}</p>
+                    <div className="flex items-center gap-3 mt-3 text-[12px] leading-[16px] text-on-surface-variant">
+                      <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">schedule</span>{ev.date ? new Date(ev.date).toLocaleDateString() : "TBD"}</span>
+                      <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">location_on</span>{ev.location || "Online"}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
 
         <div className="flex justify-center pb-[48px] md:pb-[80px]">
           <Link href="/events" className="bg-primary text-on-primary px-8 py-3 rounded-full text-[14px] leading-[20px] tracking-[0.02em] font-medium shadow-sm hover:shadow-md hover:brightness-110 active:brightness-95 transition-all flex items-center gap-2">

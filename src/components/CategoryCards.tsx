@@ -1,8 +1,7 @@
 "use client";
+import Link from "next/link";
 
 interface CategoryCardsProps {
-  setActiveCategory: (v: string) => void;
-  setCurrentPage: (v: number) => void;
   scrollTo: (ref: React.RefObject<HTMLDivElement | HTMLHeadingElement | null>) => void;
   eventsRef: React.RefObject<HTMLDivElement | null>;
   categoriesRef: React.RefObject<HTMLDivElement | null>;
@@ -15,7 +14,7 @@ const cards = [
   { name: "Workshop", icon: "handyman", gradient: "from-amber-600 to-amber-800", desc: "Learn & create" },
 ];
 
-export default function CategoryCards({ setActiveCategory, setCurrentPage, scrollTo, eventsRef, categoriesRef }: CategoryCardsProps) {
+export default function CategoryCards({ scrollTo, eventsRef, categoriesRef }: CategoryCardsProps) {
   return (
     <section ref={categoriesRef} id="categories" className="py-[80px] px-[16px] md:px-[40px] max-w-[1280px] mx-auto">
       <div className="text-center mb-12 scroll-reveal">
@@ -24,17 +23,15 @@ export default function CategoryCards({ setActiveCategory, setCurrentPage, scrol
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 scroll-reveal scroll-reveal-delay-1">
         {cards.map((cat) => (
-          <button
+          <Link
             key={cat.name}
-            onClick={() => { setActiveCategory(cat.name); setCurrentPage(1); setTimeout(() => scrollTo(eventsRef), 100); }}
-            className={`group relative overflow-hidden rounded-2xl p-6 text-left text-white bg-gradient-to-br ${cat.gradient} transition-all duration-300 hover:scale-[1.03] hover:shadow-xl cursor-pointer`}
+            href={`/events?category=${cat.name}`}
+            className={`group relative overflow-hidden rounded-2xl p-6 text-left text-white bg-gradient-to-br ${cat.gradient} transition-all duration-300 hover:scale-[1.03] hover:shadow-xl`}
           >
-            <span className="material-symbols-outlined text-3xl mb-3 block opacity-90 group-hover:scale-110 transition-transform">
-              {cat.icon}
-            </span>
-            <h3 className="text-lg font-semibold font-headline mb-1">{cat.name}</h3>
-            <p className="text-sm text-white/70">{cat.desc}</p>
-          </button>
+            <span className="material-symbols-outlined text-4xl mb-3 block opacity-90 group-hover:scale-110 transition-transform">{cat.icon}</span>
+            <h3 className="text-[24px] leading-[32px] font-semibold font-headline mb-1">{cat.name}</h3>
+            <p className="text-[14px] leading-[20px] opacity-80">{cat.desc}</p>
+          </Link>
         ))}
       </div>
     </section>

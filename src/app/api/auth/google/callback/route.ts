@@ -59,21 +59,30 @@ export async function GET(req: NextRequest) {
       { expiresIn: "7d" }
     );
 
-    const clientUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
-    clientUrl.searchParams.set("token", token);
-    clientUrl.searchParams.set(
-      "user",
-      JSON.stringify({
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        profileImage: user.profileImage,
-      })
-    );
-
-    return NextResponse.redirect(clientUrl.toString());
+    const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
+    const userData = {
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      profileImage: user.profileImage,
+    };
+    response.cookies.set("token", token, {
+      httpOnly: false,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    response.cookies.set("user", JSON.stringify(userData), {
+      httpOnly: false,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return response;
   } catch (err) {
     console.error("Google callback error:", err);
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?error=google_error`);

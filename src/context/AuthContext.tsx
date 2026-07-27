@@ -16,6 +16,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, user: User) => void;
   logout: () => void;
+  updateUser: (fields: Partial<User>) => void;
   loading: boolean;
 }
 
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   token: null,
   login: () => {},
   logout: () => {},
+  updateUser: () => {},
   loading: true,
 });
 
@@ -33,20 +35,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    const getCookie = (name: string) => {
+      const match = document.cookie.match(`(^|;)\\s*${name}\\s*=\\s*([^;]+)`);
+      return match ? decodeURIComponent(match[2]) : null;
+    };
+    let storedToken = localStorage.getItem("token") || getCookie("token");
+    let storedUser = localStorage.getItem("user") || getCookie("user");
     if (storedToken && storedUser) {
-      fetch("/api/dashboard", { headers: { Authorization: `Bearer ${storedToken}` } })
-        .then((r) => {
-          if (!r.ok) throw new Error("invalid token");
-          setToken(storedToken);
-          setUser(JSON.parse(storedUser));
-        })
-        .catch(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-        })
-        .finally(() => setLoading(false));
+      localStorage.setItem("token", storedToken);
+      localStorage.setItem("user", storedUser);
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
+      setLoading(false);
     } else {
       setLoading(false);
     }
@@ -66,8 +66,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("user");
   };
 
+  const updateUser = (fields: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...fields };
+      localStorage.setItem("user", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, loading }}>
       {children}
     </AuthContext.Provider>
   );
