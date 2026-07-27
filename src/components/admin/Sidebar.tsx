@@ -121,7 +121,13 @@ export function Sidebar({ adminName }: SidebarProps) {
               <p className="text-xs text-ink-muted">Lead Admin</p>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => {
+                document.cookie = "token=; path=/; max-age=0";
+                document.cookie = "user=; path=/; max-age=0";
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                signOut({ callbackUrl: "/login" });
+              }}
               aria-label="Log out"
               className="rounded-lg p-1.5 text-ink-muted hover:bg-danger-soft hover:text-danger"
             >

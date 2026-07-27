@@ -68,6 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("user");
     document.cookie = "token=; path=/; max-age=0";
     document.cookie = "user=; path=/; max-age=0";
+    // Clear NextAuth cookies in case admin logged in via /login
+    document.cookie = "next-auth.session-token=; path=/; max-age=0";
+    document.cookie = "next-auth.callback-url=; path=/; max-age=0";
+    document.cookie = "next-auth.csrf-token=; path=/; max-age=0";
   };
 
   const updateUser = (fields: Partial<User>) => {
