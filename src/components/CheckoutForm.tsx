@@ -3,9 +3,22 @@
 import React, { useMemo, useState } from 'react';
 import type { CheckoutPayload } from '@/lib/checkoutStorage';
 
+interface PromoInfo {
+  _id: string;
+  code: string;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  discountValue: number;
+  minimumPurchase?: number;
+  description?: string;
+}
+
 type Props = {
   payload: CheckoutPayload;
-  onSubmit: (customer: { fullName: string; email: string; phone: string }, payment: { method: string; cardName?: string; cardNumber?: string; expiry?: string; cvv?: string }) => Promise<void>;
+  onSubmit: (
+    customer: { fullName: string; email: string; phone: string },
+    payment: { method: string; cardName?: string; cardNumber?: string; expiry?: string; cvv?: string },
+    promo?: PromoInfo
+  ) => Promise<void>;
   onBack?: () => void;
   processing?: boolean;
 };
@@ -22,7 +35,22 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
+  const [promoInput, setPromoInput] = useState('');
+  const [promo, setPromo] = useState<PromoInfo | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+
   const subtotal = useMemo(() => payload.seats.reduce((s, seat) => s + seat.price, 0), [payload]);
+
+  const discount = useMemo(() => {
+    if (!promo) return 0;
+    if (promo.discountType === 'PERCENTAGE') {
+      return subtotal * (promo.discountValue / 100);
+    }
+    return promo.discountValue;
+  }, [promo, subtotal]);
+
+  const total = subtotal + 9 - discount;
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -41,11 +69,48 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
     return Object.keys(e).length === 0;
   };
 
+  const handleApplyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code) { setPromoError('Enter a promo code'); return; }
+
+    setPromoLoading(true);
+    setPromoError(null);
+
+    try {
+      const res = await fetch(`/api/promocodes/validate?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+
+      if (!data.valid) {
+        setPromoError(data.message || 'Invalid promo code');
+        setPromo(null);
+        return;
+      }
+
+      if (data.minimumPurchase && subtotal < data.minimumPurchase) {
+        setPromoError(`Minimum purchase of $${data.minimumPurchase} required`);
+        setPromo(null);
+        return;
+      }
+
+      setPromo(data);
+    } catch {
+      setPromoError('Failed to validate promo code');
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setPromo(null);
+    setPromoInput('');
+    setPromoError(null);
+  };
+
   const handleSubmit = async () => {
     if (!validate()) return;
     setLoading(true);
     try {
-      await onSubmit({ fullName, email, phone }, { method, cardName, cardNumber, expiry, cvv });
+      await onSubmit({ fullName, email, phone }, { method, cardName, cardNumber, expiry, cvv }, promo ?? undefined);
     } finally {
       setLoading(false);
     }
@@ -83,6 +148,43 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
           <label className="text-sm font-semibold text-slate-600">Phone</label>
           <input className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-amber-900 focus:ring-2 focus:ring-amber-100" value={phone} onChange={(e) => setPhone(e.target.value)} />
           {errors.phone ? <p className="text-sm text-red-600">{errors.phone}</p> : null}
+        </div>
+
+        <div className="border-t border-slate-200 pt-2" />
+
+        {/* Promo Code */}
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-slate-600">Promo Code</label>
+          {promo ? (
+            <div className="flex items-center justify-between rounded-lg border border-green-300 bg-green-50 px-4 py-3">
+              <div>
+                <span className="font-semibold text-green-800">{promo.code}</span>
+                <span className="ml-2 text-sm text-green-700">
+                  ({promo.discountType === 'PERCENTAGE' ? `${promo.discountValue}% off` : `-$${promo.discountValue}`})
+                </span>
+                {promo.description && <p className="text-xs text-green-600 mt-0.5">{promo.description}</p>}
+              </div>
+              <button type="button" onClick={handleRemovePromo} className="text-sm font-semibold text-red-600 hover:underline">Remove</button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                value={promoInput}
+                onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                placeholder="Enter code"
+                className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-amber-900 focus:ring-2 focus:ring-amber-100 uppercase"
+              />
+              <button
+                type="button"
+                onClick={handleApplyPromo}
+                disabled={promoLoading}
+                className="rounded-lg border border-amber-900 px-4 py-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-50 disabled:opacity-50"
+              >
+                {promoLoading ? '...' : 'Apply'}
+              </button>
+            </div>
+          )}
+          {promoError && <p className="text-sm text-red-600">{promoError}</p>}
         </div>
 
         <div className="border-t border-slate-200 pt-2" />
@@ -134,13 +236,7 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
         ) : null}
 
         <div className="flex items-center gap-2 py-2">
-          <input
-            type="checkbox"
-            id="billing"
-             checked
-             readOnly
-            className="h-5 w-5 rounded border-slate-300 text-amber-900 focus:ring-amber-900"
-/>
+          <input type="checkbox" id="billing" checked readOnly className="h-5 w-5 rounded border-slate-300 text-amber-900 focus:ring-amber-900" />
           <label className="text-sm text-slate-600" htmlFor="billing">Billing address same as shipping</label>
         </div>
 
@@ -150,7 +246,7 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
             {isSubmitting ? (
               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
             ) : null}
-            Confirm & Continue — ${(subtotal + 9).toFixed(2)}
+            Confirm & Continue — ${total.toFixed(2)}
           </button>
         </div>
 

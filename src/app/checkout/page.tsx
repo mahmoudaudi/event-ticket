@@ -30,7 +30,7 @@ export default function CheckoutPage() {
 
   const handleBack = () => router.back();
 
-  const handleSubmit = async (_customer: any, _payment: any) => {
+  const handleSubmit = async (_customer: any, _payment: any, _promo?: any) => {
     setProcessing(true);
     setError(null);
     
@@ -39,7 +39,6 @@ export default function CheckoutPage() {
         throw new Error('Checkout session expired. Please start over.');
       }
 
-      // Validate required checkout data
       if (!payload.event?._id) {
         throw new Error('Event information is missing.');
       }
@@ -48,36 +47,45 @@ export default function CheckoutPage() {
         throw new Error('No seats selected.');
       }
 
-      // Simulate payment processing
       await new Promise((res) => setTimeout(res, 1400));
 
-      // Prepare booking data using REAL values from checkout payload
-      const seatIds = payload.seats.map((s) => s.id); // Real MongoDB ObjectIds
+      const seatIds = payload.seats.map((s) => s.id);
       const bookingFee = 9;
-      const totalAmount = payload.subtotal + bookingFee;
 
-      // Create booking record with real data
+      const discount = _promo
+        ? _promo.discountType === 'PERCENTAGE'
+          ? payload.subtotal * (_promo.discountValue / 100)
+          : _promo.discountValue
+        : 0;
+
+      const totalAmount = payload.subtotal + bookingFee - discount;
+
+      const body: Record<string, unknown> = {
+        eventId: payload.event._id,
+        seatIds,
+        tickets: [
+          {
+            ticketTypeId: payload.event._id,
+            quantity: payload.seats.length,
+            unitPrice: payload.seats[0]?.price || 0,
+            totalPrice: payload.subtotal,
+          },
+        ],
+        subtotal: payload.subtotal,
+        discount,
+        total: totalAmount,
+      };
+
+      if (_promo?._id) {
+        body.promoCodeId = _promo._id;
+      }
+
       const bookingResponse = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          eventId: payload.event._id, // Real MongoDB ObjectId
-          seatIds, // Real MongoDB ObjectIds from seat selection
-          tickets: [
-            {
-              // Use event title + section as ticket type identifier
-              ticketTypeId: payload.event._id, // Reference to event as ticket type
-              quantity: payload.seats.length,
-              unitPrice: payload.seats[0]?.price || 0,
-              totalPrice: payload.subtotal,
-            },
-          ],
-          subtotal: payload.subtotal,
-          discount: 0,
-          total: totalAmount,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!bookingResponse.ok) {
