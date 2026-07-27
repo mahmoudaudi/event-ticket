@@ -26,7 +26,7 @@ export default function PopularEvents({ events, loading, popularRef }: PopularEv
       ) : events.length === 0 ? (
         <p className="text-center text-on-surface-variant py-12">No popular events yet.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 scroll-reveal scroll-reveal-delay-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {events.slice(0, 2).map((ev) => (
             <Link key={ev._id} href={`/events/${ev._id}`} className="group relative bg-surface-container-lowest rounded-2xl overflow-hidden premium-card-shadow flex flex-col sm:flex-row">
               <div className="relative sm:w-2/5 h-48 sm:h-auto">

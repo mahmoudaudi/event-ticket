@@ -197,7 +197,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <EventsMap />
+        <EventsMap events={allEvents} />
       </main>
 
       <BackToTop show={showBackToTop} />

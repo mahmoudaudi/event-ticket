@@ -26,7 +26,7 @@ export default function UpcomingEvents({ events, loading, upcomingRef }: Upcomin
       ) : events.length === 0 ? (
         <p className="text-center text-on-surface-variant py-12">No upcoming events right now.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 scroll-reveal scroll-reveal-delay-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {events.slice(0, 4).map((ev) => (
             <Link key={ev._id} href={`/events/${ev._id}`} className="group bg-surface-container-lowest rounded-2xl overflow-hidden premium-card-shadow">
               <div className="relative h-40">
