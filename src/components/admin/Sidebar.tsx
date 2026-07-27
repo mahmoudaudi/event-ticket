@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   CalendarRange,
@@ -124,9 +123,12 @@ export function Sidebar({ adminName }: SidebarProps) {
               onClick={() => {
                 document.cookie = "token=; path=/; max-age=0";
                 document.cookie = "user=; path=/; max-age=0";
+                document.cookie = "next-auth.session-token=; path=/; max-age=0";
+                document.cookie = "next-auth.callback-url=; path=/; max-age=0";
+                document.cookie = "next-auth.csrf-token=; path=/; max-age=0";
                 localStorage.removeItem("token");
                 localStorage.removeItem("user");
-                signOut({ callbackUrl: "/login" });
+                window.location.href = "/login";
               }}
               aria-label="Log out"
               className="rounded-lg p-1.5 text-ink-muted hover:bg-danger-soft hover:text-danger"
