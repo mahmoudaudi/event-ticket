@@ -128,9 +128,8 @@ export async function POST(request: Request) {
     const random = Math.random().toString(36).substring(2, 5).toUpperCase();
     const bookingReference = `EP-${timestamp.toString().slice(-4)}-${random}`;
 
-    // Create booking with validated real data. `qrCode` stores the raw
-    // content to encode, not an image — the e-ticket page renders it as a
-    // scannable SVG on demand via generateQrCodeSvg() (see src/lib/qrcode.ts).
+    const origin = request.headers.get("origin") || `https://${request.headers.get("host") || "event-ticket.app"}`;
+
     const booking = await Booking.create({
       bookingReference,
       userId: new mongoose.Types.ObjectId(userId),
@@ -144,6 +143,10 @@ export async function POST(request: Request) {
       bookingStatus: 'CONFIRMED',
       qrCode: bookingReference,
     });
+
+    // Set qrCode to a verifiable URL now that we have the booking._id
+    booking.qrCode = `${origin}/bookings/${booking._id}`;
+    await booking.save();
 
     // Create reserved seat records
     await ReservedSeat.insertMany(
