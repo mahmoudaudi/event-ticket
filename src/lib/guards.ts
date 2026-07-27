@@ -2,21 +2,42 @@ import "server-only";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { auth } from "@/lib/auth";
+import { connectDB } from "@/lib/db";
+import User from "@/models/User";
 import type { Session } from "next-auth";
 
 /**
  * Resolves the current session and verifies the caller is an active ADMIN.
+ * Checks NextAuth first, then falls back to the app's JWT cookie for admins
+ * who logged in via the public /login page.
+ *
  * Returns `null` when the check fails so route handlers can respond with a
  * 401/403 without throwing.
- *
- * @example
- * const session = await requireAdmin();
- * if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
  */
 export async function requireAdmin(): Promise<Session | null> {
+  // Check NextAuth session first
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") return null;
-  return session;
+  if (session?.user?.role === "ADMIN") return session;
+
+  // Fallback: check app's JWT cookie
+  try {
+    const token = (await cookies()).get("token")?.value;
+    if (!token) return null;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; role: string };
+    if (decoded.role !== "ADMIN") return null;
+    // Fetch user to get name for audit logging
+    await connectDB();
+    const user = await User.findById(decoded.userId).select("firstName lastName").lean();
+    return {
+      user: {
+        id: decoded.userId,
+        name: user ? `${user.firstName} ${user.lastName}` : "Admin",
+        role: "ADMIN",
+      },
+    } as Session;
+  } catch {
+    return null;
+  }
 }
 
 /**
