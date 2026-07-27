@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
         totalSpent,
       },
       bookings: bookings.map((b: any) => ({
+        id: b._id.toString(),
         eventName: b.eventId?.title || "Unknown Event",
         date: b.eventId?.eventDate,
         venue: b.eventId?.venue,

@@ -198,9 +198,9 @@ export default function DashboardPage() {
                               </p>
                             </div>
                           </div>
-                          <button className="bg-primary-container text-on-primary-container px-6 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+                          <Link href={`/bookings/${booking.id}`} className="bg-primary-container text-on-primary-container px-6 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity inline-block text-center">
                             View Details
-                          </button>
+                          </Link>
                         </div>
                       </div>
                     </div>
