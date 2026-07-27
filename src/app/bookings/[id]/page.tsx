@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, Ticket as TicketIcon, Info, MapPin } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { PrintTicketButton } from "@/components/site/PrintTicketButton";
+import { CancelBookingButton } from "@/components/site/CancelBookingButton";
 import { getUserBookingDetail } from "@/lib/user/bookings";
 import { requireUser } from "@/lib/guards";
 import { generateQrCodeSvg } from "@/lib/qrcode";
@@ -178,7 +179,10 @@ export default async function ETicketPage({ params }: ETicketPageProps) {
             <span className="font-bold text-brand">Policy:</span> No refunds or exchanges. Early arrival is
             recommended to ensure smooth entry.
           </p>
-          <PrintTicketButton label="Save as PDF" />
+          <div className="flex items-center gap-3">
+            {booking.bookingStatus === "CONFIRMED" && <CancelBookingButton bookingId={id} />}
+            <PrintTicketButton label="Save as PDF" />
+          </div>
         </div>
 
         {/* Real venue photo, only shown when the event actually has one */}
