@@ -1,243 +1,300 @@
-# 🎟️ Crescent Live — Event Ticket & Reservation System
+# Aurum — Event Ticket & Reservation System
 
-A full-stack booking platform for **Crescent Live Event Hall**, a single-venue business
-digitalizing its ticketing workflow to sell directly to customers instead of relying on
-third-party platforms and manual box-office sales.
+A full-stack event ticketing platform built with **Next.js 16**, **TypeScript**, **Tailwind CSS**, **MongoDB**, and **NextAuth.js**.
 
-Built with **Next.js**, **TypeScript**, **Tailwind CSS**, and **MongoDB**.
+Users can browse events, select seats, apply promo codes, checkout (mock payment), receive e-tickets with QR codes, and cancel reservations. Admins manage events, bookings, users, promo codes, and view analytics.
 
-**Team:** Mahmoud Audi · Mohammad Ali · Mohammad Dib
-**Course project** — Next.js capstone, single-business booking application
-
-> **Branch scope:** this `admin` branch implements the **Admin Dashboard module**
-> (Jira epics ETS-18, ETS-19, ETS-20, ETS-21) — event management, bookings management,
-> user management, and platform statistics. The public-facing site (home page, event
-> discovery, seat/ticket selection, checkout, user account) is separate, ongoing work —
-> see the team Jira board for that scope.
+Built by **Mahmoud Audi** · **Mohammad Ali** · **Mohammad Dib**
 
 ---
 
 ## Table of Contents
 
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Admin Dashboard](#admin-dashboard-admin-admin-role-only)
-- [API Endpoints](#api-endpoints)
-- [Database Schema](#database-schema)
-- [Known Limitations / Next Steps](#known-limitations--next-steps)
+- [Prerequisites](#prerequisites)
+- [Environment Variables](#environment-variables)
+- [Installation](#installation)
+- [Running the App](#running-the-app)
+- [Seed Data](#seed-data)
+- [Login Credentials](#login-credentials)
+- [Accessing from Mobile](#accessing-from-mobile)
+- [Key Features](#key-features)
 - [Project Structure](#project-structure)
+- [API Endpoints](#api-endpoints)
+- [Known Limitations](#known-limitations)
 
 ---
 
-## Tech Stack
+## Prerequisites
 
-- **Frontend & Backend:** Next.js (App Router, React Server Components)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS v4
-- **Database:** MongoDB Atlas · Mongoose ODM
-- **Auth:** NextAuth.js (Auth.js) v5, credentials + JWT sessions, role-based (`USER` / `ADMIN`)
-- **Charts:** Recharts
-- **Icons:** lucide-react
+| Tool | Version | Notes |
+|------|---------|-------|
+| Node.js | >= 18 | Required by Next.js 16 |
+| npm | >= 9 | Comes with Node |
+| MongoDB | Atlas (recommended) or local | A running instance |
+| Git | — | For cloning |
 
-## Getting Started
+Optional (for full functionality):
 
-### Prerequisites
+| Tool | Purpose |
+|------|---------|
+| Google Maps API key | Interactive location picker in the admin event form |
+| Google OAuth credentials | "Sign in with Google" |
+| SMTP credentials | Password reset emails |
+| Groq API key | Chatbot AI assistant |
+| Stripe keys | Real payment processing (currently mock) |
 
-- Node.js 20+
-- A MongoDB Atlas connection string (ask a teammate for the shared cluster credentials, or use your own)
+---
 
-### Installation
+## Environment Variables
+
+Copy `.env.example` to `.env.local` and fill in the values:
 
 ```bash
-git clone https://github.com/mahmoudaudi/event-ticket.git
-cd event-ticket
-git checkout admin
 cp .env.example .env.local
 ```
 
-Edit `.env.local`:
+### Required
 
 ```
-MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/event_ticket_db
-AUTH_SECRET=<generate with: openssl rand -base64 32>
-NEXTAUTH_URL=http://localhost:3000
+MONGODB_URI=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/<db>
+JWT_SECRET=<any-random-string>
+AUTH_SECRET=<any-random-string>
 ```
 
-> **Windows without OpenSSL?** Generate a secret in PowerShell instead:
-> `[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))`
->
-> **Save `.env.local` as UTF-8, not UTF-16.** Notepad and some editors default to
-> UTF-16 on Windows, which breaks the dotenv parser silently (it reports
-> `injected env (0)`). If that happens, rewrite the file with:
-> `Get-Content .env.local -Raw | Out-File -FilePath .env.local -Encoding ascii -NoNewline`
+### Optional
 
-Install dependencies and seed sample data:
+```
+# App URL (used for QR codes / links)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Google OAuth
+GOOGLE_CLIENT_ID=xxx
+GOOGLE_CLIENT_SECRET=xxx
+
+# Google Maps (admin location picker)
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=xxx
+
+# SMTP (forgot password)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=you@gmail.com
+SMTP_PASS=<app-password>
+SMTP_FROM=you@gmail.com
+
+# Groq AI (chatbot)
+GROQ_API_KEY=xxx
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_xxx
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+```
+
+---
+
+## Installation
 
 ```bash
+git clone <repo-url>
+cd event-ticket-app
 npm install
-npm run seed   # wipes and re-seeds users, categories, events, bookings, payments
-npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+---
 
-> ⚠️ `npm run seed` **wipes** the users/categories/events/bookings/payments collections
-> before re-seeding. Check with the team before running it against the shared cluster —
-> agree on one person seeding once, rather than everyone re-seeding independently.
+## Running the App
 
-### Seeded accounts
+```bash
+# Development
+npm run dev
 
-| Role  | Email                       | Password       |
-|-------|-----------------------------|----------------|
-| Admin | admin@crescentlive.com      | Admin123!      |
-| User  | jane.doe@example.com        | Password123!   |
+# Accessible on network (for mobile testing)
+npm run dev -- -H 0.0.0.0
 
-Sign in at `/login` — admins are redirected to `/admin`, other users to `/`.
+# Production build
+npm run build && npm start
+```
 
-## Admin Dashboard (`/admin`, ADMIN role only)
+The app runs at **http://localhost:3000** by default.
 
-Protected by Edge middleware (`middleware.ts`) plus a server-side session check in `src/app/admin/layout.tsx`.
+---
 
-| Page | Path | Features |
-|---|---|---|
-| Overview | `/admin` | Revenue/events/bookings/user KPIs with trend %, date-range selector (7/30/90 days), booking-volume chart, recent activity feed, loading skeleton |
-| Events | `/admin/events` | Search, status filter, capacity/revenue rollups, create/edit/delete, duplicate as draft, drag-and-drop image upload (multi-image, cover selection), per-event ticket tier management, empty states, loading skeleton |
-| Bookings | `/admin/bookings` | Three tabs — **Table** (search, status filter, date-range filter, confirm/cancel, detail modal, bulk actions, CSV export), **Calendar** (month view of events by date, click to edit), **Activity** (booking-specific audit trail: confirms/cancels) |
-| Users | `/admin/users` | Search, per-user booking count, role change, activate/suspend with confirmation dialog, empty states, loading skeleton |
-| Logs | `/admin/logs` | Three tabs: **Admin Actions** (full audit trail, all action types), **Login Activity** (every sign-in attempt, success or failure, with reason), **Error Logs** (application errors read live from `logs/error.log`) |
-| Settings | `/admin/settings` | Admin profile, change password |
+## Seed Data
 
-> **Why Calendar/Activity live inside Bookings but Logs stays separate:** Calendar visualizes events by date and Activity shows booking-specific audit entries — both are naturally booking-context views. Login Activity and Error Logs aren't booking-specific (they're login attempts and application-wide errors), so nesting them under Bookings would be confusing; they stay in their own global Logs section instead. `/admin/calendar` and `/admin/activity` still exist as redirects to their new locations, so old links/bookmarks don't break.
+```bash
+npm run seed
+```
 
-Both the topbar search box and notification bell are fully functional (not decorative):
-searching queries live events/users and navigates to the right screen; the bell surfaces
-bookings awaiting confirmation with a live count badge.
+This creates:
 
-### Notable implementation details
+- **7 events** with ticket types and seats
+- **~66 bookings** spread across the last 30 days
+- **7 users** (1 admin + 6 customers)
+- **Promo codes**, categories, and admin activity logs
 
-- **Toast notifications** (`useToast()`) confirm or explain the outcome of every mutating action across the admin UI.
-- **Search is regex-escaped** (`src/lib/regex.ts`) and requests are de-duplicated via `AbortController` (`src/hooks/useDebouncedFetch.ts`) so a slow response to an old keystroke can never overwrite a newer one.
-- **Confirmation dialogs** (`src/components/admin/ConfirmDialog.tsx`) replace native `confirm()` for destructive actions.
-- **Client + server validation share one Zod schema** (`src/lib/validation/event.ts`) so form errors surface instantly, not just after a round-trip.
-- **Image uploads** are validated (JPEG/PNG/WEBP, 5MB max) and stored under `public/uploads/events/`. This needs zero external account setup and works great for local dev / any traditional Node.js host — but a local filesystem does **not** persist on serverless platforms with ephemeral storage (e.g. Vercel). If this project is deployed there, swap the storage calls in `src/app/api/admin/uploads/route.ts` for an object-storage SDK (Cloudinary, Vercel Blob, S3); the request/response shape is designed to stay the same so `ImageUploader.tsx` wouldn't need to change.
-- **Audit log** (`AdminActivity` model) is a separate concern from the dashboard's "Recent Activity" feed: the dashboard feed reflects business events (new booking, new signup, new event) sourced live from those collections, while the audit log specifically records admin-initiated actions.
-- **Topbar search** (`GlobalSearch.tsx`) queries events and users live, and navigates straight to the right screen: an event result opens its edit page, a user result opens the Users table pre-filtered to that person (`/admin/users?search=...`).
-- **Topbar notifications** (`NotificationsBell.tsx`) surface bookings awaiting confirmation, with a live count badge and a "View all pending bookings" link that deep-links to `/admin/bookings?status=PENDING`.
-- **Error logging** (`src/lib/logger.ts` + `withErrorLogging.ts`): every `/api/admin/*` route is wrapped so any unexpected thrown error is caught, logged with a timestamp/message/stack trace/request context to `logs/error.log`, and turned into a clean 500 response instead of leaking a stack trace to the client or failing silently. View them at `/admin/logs` → Error Logs tab. Same local-filesystem caveat as image uploads: fine for local dev/traditional hosting, would need swapping for a hosted logging service (Sentry, Logtail, etc.) on serverless.
-- **Login activity audit trail** (`LoginActivity` model): every sign-in attempt is recorded — success, or a specific failure reason (`unknown_email`, `invalid_password`, `account_suspended`) — logged from the NextAuth `authorize()` callback in `src/lib/auth.ts`. Viewable at `/admin/logs` → Login Activity.
-- **Events calendar** (`/admin/bookings?view=calendar`): month view built from a pure date-grid helper (`src/lib/calendarGrid.ts`), showing each event on its date with a booking count and a status-colored dot; clicking an event opens its edit page directly. Navigation is URL-param driven (`?view=calendar&month=YYYY-MM`), so the whole tab stays server-rendered with no client JS needed.
+---
 
-## API Endpoints
+## Login Credentials
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | Check database connection |
-| GET/POST | `/api/auth/[...nextauth]` | NextAuth session/sign-in handlers |
-| GET | `/api/admin/stats?range=7\|30\|90` | Dashboard KPIs + chart + activity feed |
-| GET/POST | `/api/admin/events` | List (paginated/search/filter) / create event |
-| GET/PATCH/DELETE | `/api/admin/events/[id]` | Read / update / delete an event |
-| POST | `/api/admin/events/[id]/duplicate` | Clone an event + its ticket tiers as a new draft |
-| POST | `/api/admin/events/[id]/ticket-types` | Add a ticket tier to an event |
-| PATCH/DELETE | `/api/admin/ticket-types/[id]` | Update / remove a ticket tier |
-| GET/POST | `/api/admin/categories` | List / create categories |
-| GET | `/api/admin/bookings?dateRange=7\|30\|90\|ALL` | List bookings (paginated/search/filter/date-range) |
-| GET | `/api/admin/bookings/[id]` | Full booking detail (ticket line items, totals) |
-| PATCH | `/api/admin/bookings/[id]` | Confirm or cancel a booking (logs to audit trail) |
-| PATCH | `/api/admin/bookings/bulk` | Bulk confirm/cancel multiple bookings |
-| GET | `/api/admin/bookings/export` | CSV export, respects current search/status/date filters |
-| GET | `/api/admin/users` | List users (paginated/search) |
-| PATCH | `/api/admin/users/[id]` | Change role / active status (logs to audit trail) |
-| GET | `/api/admin/activity` | Paginated admin audit log |
-| GET | `/api/admin/search?q=` | Topbar quick search (events + users) |
-| GET | `/api/admin/notifications` | Pending-booking count + items for the topbar bell |
-| POST/DELETE | `/api/admin/uploads` | Upload / delete event images |
-| PATCH | `/api/admin/profile` | Change own password |
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | admin@crescentlive.com | Admin123! |
+| **User** | jane.doe@example.com | Password123! |
 
-All `/api/admin/*` routes are guarded server-side by `requireAdmin()` (`src/lib/guards.ts`) and wrapped in `withErrorLogging()` (`src/lib/withErrorLogging.ts`), independent of the middleware.
+---
 
-## Database Schema
+## Accessing from Mobile (QR Code Scanning)
 
-### Collections
+1. Start the dev server on your network:
+   ```bash
+   npm run dev -- -H 0.0.0.0
+   ```
+2. Find your local IP:
+   ```bash
+   hostname -I   # e.g. 192.168.1.20
+   ```
+3. Set the URL in `.env.local`:
+   ```
+   NEXT_PUBLIC_APP_URL=http://192.168.1.20:3000
+   ```
+4. Re-seed to update QR codes:
+   ```bash
+   npm run seed
+   ```
+5. Access from your phone at `http://192.168.1.20:3000` (same WiFi).
 
-- **users** — accounts (`USER` / `ADMIN` roles, bcrypt-hashed passwords)
-- **categories** — event categories
-- **events** — events with venue, date, status, banner + gallery images
-- **tickettypes** — ticket tiers per event (price, capacity, remaining seats)
-- **bookings** — booking records with ticket line items
-- **promocodes** — discount codes
-- **payments** — payment records
-- **adminactivity** — audit trail of admin-initiated actions (booking status changes, user role/active changes)
-- **loginactivity** — every sign-in attempt (success/failure + reason), regardless of role
-- **seats** / **reservedseats** — per-seat inventory (schema present for a possible future interactive seat map; **the current admin/booking data model uses general-admission `tickettypes`, not per-seat assignment** — if another branch implements seat selection against `seats`/`reservedseats`, that's a different inventory model and needs reconciling with this one before checkout is built on top of either)
+---
 
-### Files (not database) generated at runtime
+## Key Features
 
-- **`logs/error.log`** — newline-delimited JSON error log, written by `withErrorLogging()`. Gitignored (only `logs/.gitkeep` is tracked).
-- **`public/uploads/events/`** — uploaded event images. Gitignored (only `.gitkeep` is tracked).
+### Public / User
 
-## Known Limitations / Next Steps
+- **Event discovery** — Browse all events with filters and search
+- **Interactive seat selection** — Visual seat map with availability
+- **Checkout** — Mock payment form with card or mock method
+- **Promo codes** — Apply discount codes at checkout
+- **E-tickets** — QR code per booking (scannable URL to e-ticket page)
+- **Cancel reservation** — User can cancel from confirmation or e-ticket page
+  - **Same-day cancellation**: 50% fee applies if cancelled on the event date
+- **Membership tiers** — Bronze / Silver / Gold / Platinum based on event count
+- **Dashboard** — View bookings, membership progress, edit profile
 
-- **Image storage is local-disk**, not suitable for serverless deployment as-is (see note above).
-- **Error logs are also local-disk** (`logs/error.log`), same serverless caveat — swap for a hosted logging service if deployed there.
-- **ETS-20 scope**: this covers the admin-side upload experience. The public booking flow (browsing, checkout, e-tickets) is a separate, not-yet-built phase.
-- **Public site** (home page, event discovery, seat/ticket selection, checkout, user dashboard) is out of scope for this module — see the team's Jira board for that work.
+### Admin (`/admin`)
+
+| Page | Description |
+|------|-------------|
+| Dashboard | Stats, charts, recent activity |
+| Events | CRUD — create, edit, duplicate, manage ticket types |
+| Bookings | List, search, filter, confirm/cancel, export |
+| Promo Codes | CRUD — percentage or fixed discount, min purchase, expiry |
+| Users | List, search, edit role |
+| Logs | Audit trail of admin actions |
+| Settings | Admin profile |
+| Calendar | Events calendar view |
+
+### Auth
+
+- **Dual auth**: JWT (`/login`) + NextAuth (`/admin/login`, Google OAuth)
+- Middleware protects `/admin` and `/dashboard` routes
+- Role-based redirect on login (admin → `/admin`, user → `/dashboard`)
+
+---
 
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── admin/             # Admin dashboard pages (protected)
-│   │   ├── activity/       # Redirects to /admin/logs?tab=admin (legacy link support)
-│   │   ├── bookings/       # Tabbed: Table / Calendar / Activity
-│   │   ├── calendar/       # Redirects to /admin/bookings?view=calendar (legacy link support)
-│   │   ├── events/
-│   │   ├── logs/           # Tabbed: Admin Actions / Login Activity / Error Logs
-│   │   ├── settings/
-│   │   ├── users/
-│   │   └── loading.tsx     # Per-route loading skeletons
-│   ├── api/
-│   │   ├── admin/          # Admin REST endpoints (all wrapped in withErrorLogging)
-│   │   ├── auth/           # NextAuth handler
-│   │   └── health/
-│   ├── login/
-│   └── page.tsx
+│   ├── admin/(protected)/   # Admin pages (events, bookings, users, etc.)
+│   ├── api/                 # API routes
+│   │   ├── admin/           # Admin CRUD APIs
+│   │   ├── auth/            # Login, register, Google OAuth, password reset
+│   │   ├── bookings/        # Booking CRUD + cancel
+│   │   ├── events/          # Events + seats + reserve
+│   │   ├── promocodes/      # Promo code validation
+│   │   ├── qrcode/          # QR code SVG generator
+│   │   └── tickets/         # Ticket verification (venue scanning)
+│   ├── bookings/            # User's bookings list + detail
+│   ├── checkout/            # Checkout page
+│   ├── confirmation/        # Post-booking confirmation
+│   ├── dashboard/           # User dashboard
+│   └── events/              # Event listing + detail + seat selection
 ├── components/
-│   ├── admin/              # Sidebar, Topbar, tables, charts, forms, modals, TabBar, AuditLogList, PageLinkPagination
-│   ├── auth/                # LoginForm
-│   ├── providers/           # Session + Toast providers (mounted at root layout)
-│   └── ui/                  # Button, Card, Badge, Modal, ConfirmDialog, EmptyState, Skeleton, Field
-├── hooks/
-│   ├── useDebouncedFetch.ts # Debounced, abort-safe data fetching for search/filter tables
-│   └── useClickOutside.ts  # Closes dropdowns/popovers on outside click
+│   ├── admin/               # Admin-specific components
+│   ├── site/                # User-facing components
+│   └── ui/                  # Shared UI primitives
+├── context/                 # Auth context
 ├── lib/
-│   ├── admin/                # Shared query/mutation logic:
-│   │   ├── stats.ts            #   dashboard KPIs
-│   │   ├── events.ts           #   event + ticket tier CRUD
-│   │   ├── bookings.ts         #   booking list/detail/status/export
-│   │   ├── users.ts            #   user list/role/active
-│   │   ├── activity.ts         #   admin action audit log (+ booking-scoped filter for the Bookings Activity tab)
-│   │   ├── logins.ts           #   login attempt audit log
-│   │   ├── logs.ts             #   reads logs/error.log for the UI
-│   │   ├── calendar.ts         #   events-by-month for the calendar page
-│   │   ├── search.ts           #   topbar quick search
-│   │   └── notifications.ts    #   topbar pending-booking bell
-│   ├── validation/            # Zod schemas (shared by client + API)
-│   ├── auth.ts / auth.config.ts  # NextAuth (edge-safe config split from DB-backed config)
-│   ├── guards.ts              # requireAdmin() for API routes
-│   ├── db.ts                  # Mongoose connection
-│   ├── password.ts            # bcrypt hashing
-│   ├── regex.ts                # Safe regex-escaping for search input
-│   ├── csv.ts                  # CSV serialization for exports
-│   ├── logger.ts               # File-based error logger (logs/error.log)
-│   ├── withErrorLogging.ts     # Route handler wrapper using logger.ts
-│   └── calendarGrid.ts         # Pure month-grid builder for the calendar page
-├── models/                     # Mongoose schemas (incl. AdminActivity, LoginActivity)
-└── types/                      # Shared TypeScript types
-logs/
-└── error.log                    # Generated at runtime, gitignored (only .gitkeep tracked)
-public/
-└── uploads/events/              # Uploaded event images (gitignored, kept out of version control)
-scripts/
-└── seed.ts                      # Sample data seed script
+│   ├── admin/               # Admin business logic
+│   └── *.ts                 # Utilities (db, guards, mail, etc.)
+└── models/                  # Mongoose models
 ```
+
+---
+
+## API Endpoints
+
+### Auth
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Login with email + password |
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/forgot-password` | Send reset email |
+| POST | `/api/auth/reset-password` | Reset password |
+| GET | `/api/auth/google` | Google OAuth redirect |
+
+### Events
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/events` | List all events |
+| GET | `/api/events/[id]` | Event details |
+| GET | `/api/events/[id]/seats` | Seats for an event |
+| POST | `/api/events/[id]/reserve` | Reserve seats (legacy) |
+
+### Bookings
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/bookings` | Create booking |
+| GET | `/api/bookings/[id]` | Booking details |
+| PATCH | `/api/bookings/[id]/cancel` | Cancel + refund |
+
+### Verification
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/tickets/verify?code=URL_OR_REF` | Venue ticket verification |
+
+### Promo Codes
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/promocodes/validate?code=XXX` | Validate a promo code |
+
+### Admin
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET/POST | `/api/admin/events` | List / create events |
+| GET/PUT | `/api/admin/events/[id]` | Get / update event |
+| POST | `/api/admin/events/[id]/duplicate` | Duplicate event |
+| GET/POST | `/api/admin/events/[id]/ticket-types` | Manage ticket types |
+| GET/POST | `/api/admin/bookings` | List / search bookings |
+| GET | `/api/admin/bookings/[id]` | Booking detail |
+| GET | `/api/admin/bookings/export` | Export CSV |
+| POST | `/api/admin/bookings/bulk` | Bulk confirm/cancel |
+| GET/POST | `/api/admin/promos` | List / create promo codes |
+| GET/PUT/DELETE | `/api/admin/promos/[id]` | Get / update / delete promo code |
+| GET | `/api/admin/users` | List users |
+| GET/PUT | `/api/admin/users/[id]` | Get / update user |
+| GET | `/api/admin/stats` | Dashboard statistics |
+| GET | `/api/admin/search` | Global search |
+| GET | `/api/admin/activity` | Recent activity |
+| GET | `/api/admin/logs` | Audit logs |
+| GET | `/api/admin/notifications` | Pending booking alerts |
+
+---
+
+## Known Limitations
+
+1. **Payment is mock** — No real Stripe integration yet. All bookings are auto-PAID. Stripe can be added later with minimal changes (checkout session + webhook).
+2. **No email sending** — SMTP is configured but sending is not fully wired. Password reset and booking confirmations don't send emails.
+3. **No real-time notifications** — The admin notification bell only queries PENDING bookings on load. No WebSocket/SSE.
+4. **Reservation expiry** — Seats reserved via the legacy reserve endpoint stay RESERVED indefinitely. No timeout mechanism.
+5. **Chatbot** — The Groq-powered chatbot exists but requires a valid API key to function.
