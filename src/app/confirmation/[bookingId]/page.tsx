@@ -356,7 +356,7 @@ export default function BookingConfirmationPage() {
               <div className="rounded-2xl border border-[#d9cfbf] bg-white p-6 flex flex-col items-center shadow-[0_12px_40px_-24px_rgba(15,23,42,0.12)]">
                 <p className="text-sm font-semibold text-slate-600 mb-4">QR Code</p>
                 <img
-                  src={booking.qrCode}
+                  src={`/api/qrcode?data=${encodeURIComponent(booking.qrCode)}`}
                   alt="Booking QR Code"
                   className="w-40 h-40 border-4 border-[#d9cfbf] rounded-lg"
                 />
