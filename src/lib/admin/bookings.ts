@@ -192,7 +192,11 @@ export async function updateBookingStatus(
   // duplicate/misleading audit entry for something that didn't change.
   if (existing.bookingStatus === status) return existing.bookingReference;
 
-  const booking = await Booking.findByIdAndUpdate(id, { bookingStatus: status }, { new: true });
+  const booking = await Booking.findByIdAndUpdate(
+    id,
+    { bookingStatus: status, ...(status === "CANCELLED" ? { paymentStatus: "REFUNDED" } : {}) },
+    { new: true }
+  );
   if (!booking) return null;
 
   // If cancelling, free the reserved seats back to AVAILABLE
@@ -233,7 +237,10 @@ export async function bulkUpdateBookingStatus(
   const changingBookings = bookings.filter((b) => b.bookingStatus !== status);
   if (changingBookings.length === 0) return 0;
 
-  await Booking.updateMany({ _id: { $in: changingBookings.map((b) => b._id) } }, { bookingStatus: status });
+  await Booking.updateMany(
+    { _id: { $in: changingBookings.map((b) => b._id) } },
+    { bookingStatus: status, ...(status === "CANCELLED" ? { paymentStatus: "REFUNDED" } : {}) }
+  );
 
   // If cancelling, free the reserved seats back to AVAILABLE
   if (status === "CANCELLED") {

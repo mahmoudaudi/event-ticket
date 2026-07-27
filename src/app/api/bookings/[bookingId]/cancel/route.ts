@@ -45,8 +45,9 @@ export async function PATCH(
     // Delete reserved seat records
     await ReservedSeat.deleteMany({ bookingId: new mongoose.Types.ObjectId(bookingId) });
 
-    // Update booking status
+    // Update booking status and mark payment as refunded
     booking.bookingStatus = 'CANCELLED';
+    booking.paymentStatus = 'REFUNDED';
     await booking.save();
 
     return NextResponse.json(

@@ -17,7 +17,7 @@ const bookingSchema = new mongoose.Schema(
     subtotal: Number,
     discount: Number,
     total: { type: Number, required: true },
-    paymentStatus: { type: String, enum: ["PENDING", "PAID", "FAILED"], default: "PENDING" },
+    paymentStatus: { type: String, enum: ["PENDING", "PAID", "FAILED", "REFUNDED"], default: "PENDING" },
     bookingStatus: { type: String, enum: ["PENDING", "CONFIRMED", "CANCELLED"], default: "PENDING" },
     qrCode: String,
     createdBy: { type: mongoose.Types.ObjectId, ref: "User" },
