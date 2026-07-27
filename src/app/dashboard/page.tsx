@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/Toast";
 import EditProfileModal from "@/components/EditProfileModal";
@@ -16,10 +17,17 @@ interface DashboardData {
 export default function DashboardPage() {
   const { user, token, loading: authLoading, logout, updateUser } = useAuth();
   const { showToast } = useToast();
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [bookingTab, setBookingTab] = useState<"active" | "past">("active");
+
+  useEffect(() => {
+    if (!authLoading && !token) {
+      router.replace("/login");
+    }
+  }, [authLoading, token, router]);
 
   useEffect(() => {
     if (!user || !token) return;
@@ -44,11 +52,7 @@ export default function DashboardPage() {
   }
 
   if (!token) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-on-surface-variant">Please <Link href="/login" className="text-primary underline">sign in</Link> to view your dashboard.</p>
-      </main>
-    );
+    return null;
   }
 
   if (loading) {

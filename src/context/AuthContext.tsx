@@ -64,6 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    document.cookie = "token=; path=/; max-age=0";
+    document.cookie = "user=; path=/; max-age=0";
   };
 
   const updateUser = (fields: Partial<User>) => {
