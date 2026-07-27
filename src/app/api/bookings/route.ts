@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 import ReservedSeat from '@/models/ReservedSeat';
+import Seat from '@/models/Seat';
 import { requireUser } from '@/lib/guards';
 
 /**
@@ -102,6 +103,26 @@ export async function POST(request: Request) {
 
     await connectDB();
 
+    const seatObjectIds = seatIds.map((id) => new mongoose.Types.ObjectId(id));
+
+    // Atomically check all seats are available and mark them as BOOKED
+    const alreadyBooked = await Seat.countDocuments({
+      _id: { $in: seatObjectIds },
+      status: 'BOOKED',
+    });
+
+    if (alreadyBooked > 0) {
+      return NextResponse.json(
+        { message: 'Some selected seats are already booked. Please go back and choose different seats.' },
+        { status: 409 }
+      );
+    }
+
+    await Seat.updateMany(
+      { _id: { $in: seatObjectIds } },
+      { $set: { status: 'BOOKED' } }
+    );
+
     // Generate unique booking reference
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 5).toUpperCase();
@@ -124,9 +145,7 @@ export async function POST(request: Request) {
       qrCode: bookingReference,
     });
 
-    // Create reserved seat records with real MongoDB ObjectIds
-    const seatObjectIds = seatIds.map((id) => new mongoose.Types.ObjectId(id));
-
+    // Create reserved seat records
     await ReservedSeat.insertMany(
       seatObjectIds.map((seatId) => ({
         bookingId: booking._id,

@@ -1,10 +1,11 @@
 import "server-only";
 import { Types, type PipelineStage } from "mongoose";
 import { connectDB } from "@/lib/db";
-import { Booking } from "@/models";
+import { Booking, Seat } from "@/models";
 import { escapeRegex } from "@/lib/regex";
 import { logAdminActivity } from "@/lib/admin/activity";
 import type { AdminBookingListItem, AdminBookingListResponse, AdminBookingDetail, BookingDateRange } from "@/types/admin";
+import ReservedSeat from "@/models/ReservedSeat";
 export type { BookingDateRange } from "@/types/admin";
 
 const PAGE_SIZE = 10;
@@ -194,6 +195,18 @@ export async function updateBookingStatus(
   const booking = await Booking.findByIdAndUpdate(id, { bookingStatus: status }, { new: true });
   if (!booking) return null;
 
+  // If cancelling, free the reserved seats back to AVAILABLE
+  if (status === "CANCELLED") {
+    const reservedSeats = await ReservedSeat.find({ bookingId: new Types.ObjectId(id) });
+    const seatIds = reservedSeats.map((rs) => rs.seatId);
+    if (seatIds.length > 0) {
+      await Seat.updateMany(
+        { _id: { $in: seatIds } },
+        { $set: { status: "AVAILABLE" } }
+      );
+    }
+  }
+
   await logAdminActivity({
     adminId: admin.id,
     adminName: admin.name,
@@ -221,6 +234,20 @@ export async function bulkUpdateBookingStatus(
   if (changingBookings.length === 0) return 0;
 
   await Booking.updateMany({ _id: { $in: changingBookings.map((b) => b._id) } }, { bookingStatus: status });
+
+  // If cancelling, free the reserved seats back to AVAILABLE
+  if (status === "CANCELLED") {
+    const allReservedSeats = await ReservedSeat.find({
+      bookingId: { $in: changingBookings.map((b) => b._id) },
+    });
+    const allSeatIds = allReservedSeats.map((rs) => rs.seatId);
+    if (allSeatIds.length > 0) {
+      await Seat.updateMany(
+        { _id: { $in: allSeatIds } },
+        { $set: { status: "AVAILABLE" } }
+      );
+    }
+  }
 
   await Promise.all(
     changingBookings.map((booking) =>

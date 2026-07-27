@@ -5,7 +5,7 @@ const seatSchema = new mongoose.Schema({
   section: { type: String, required: true },
   row: { type: String, required: true },
   seatNumber: { type: String, required: true },
-  status: { type: String, enum: ["AVAILABLE", "RESERVED"], default: "AVAILABLE" },
+  status: { type: String, enum: ["AVAILABLE", "RESERVED", "BOOKED"], default: "AVAILABLE" },
   price: { type: Number, required: true, default: 60 },
 });
 
