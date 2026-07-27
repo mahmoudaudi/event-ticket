@@ -498,9 +498,12 @@ export default function BookingConfirmationPage() {
                 </div>
                 <h2 className="text-xl font-bold text-slate-900">Cancel Reservation?</h2>
               </div>
-              <p className="text-slate-600 mb-6">
+              <p className="text-slate-600 mb-4">
                 Are you sure you want to cancel this reservation? This action cannot be undone, and all reserved seats will be released.
               </p>
+              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                <strong>Same-day cancellation:</strong> If the event is today, a 50% cancellation fee applies and only half the amount will be refunded.
+              </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowCancelConfirm(false)}

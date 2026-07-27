@@ -55,6 +55,10 @@ export function CancelBookingButton({ bookingId }: CancelBookingButtonProps) {
         <p className="text-sm text-ink-muted">
           Are you sure you want to cancel this reservation? This action cannot be undone, and all reserved seats will be released.
         </p>
+        <div className="mt-4 rounded-lg border border-warning-soft bg-warning-soft/10 p-3 text-sm text-warning">
+          <strong>Same-day cancellation:</strong> If the event is today, a 50% cancellation fee applies and only half
+          the amount will be refunded.
+        </div>
 
         {error && (
           <div className="mt-4 rounded-lg border border-danger-soft bg-danger-soft/10 p-3 text-sm text-danger">

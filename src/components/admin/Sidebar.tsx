@@ -13,6 +13,7 @@ import {
   Plus,
   LogOut,
   X,
+  Tag,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useMobileSidebar } from "@/components/admin/MobileSidebarContext";
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/events", label: "Events", icon: CalendarRange },
   { href: "/admin/bookings", label: "Bookings", icon: Ticket },
+  { href: "/admin/promos", label: "Promo Codes", icon: Tag },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/logs", label: "Logs", icon: ScrollText },
   { href: "/admin/settings", label: "Settings", icon: Settings },

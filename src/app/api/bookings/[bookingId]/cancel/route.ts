@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 import ReservedSeat from '@/models/ReservedSeat';
 import Seat from '@/models/Seat';
+import Event from '@/models/Event';
 
 export async function PATCH(
   request: Request,
@@ -22,7 +23,7 @@ export async function PATCH(
 
     await connectDB();
 
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId).populate('eventId', 'eventDate');
 
     if (!booking) {
       return NextResponse.json({ message: 'Booking not found.' }, { status: 404 });
@@ -30,6 +31,25 @@ export async function PATCH(
 
     if (booking.bookingStatus === 'CANCELLED') {
       return NextResponse.json({ message: 'Booking is already cancelled.' }, { status: 400 });
+    }
+
+    // Check if cancellation is on the same day as the event
+    const event = booking.eventId as unknown as { eventDate?: Date };
+    let refundAmount = booking.total;
+    let penalty = 0;
+
+    if (event?.eventDate) {
+      const eventDate = new Date(event.eventDate);
+      const today = new Date();
+      const isSameDay =
+        eventDate.getFullYear() === today.getFullYear() &&
+        eventDate.getMonth() === today.getMonth() &&
+        eventDate.getDate() === today.getDate();
+
+      if (isSameDay) {
+        penalty = booking.total * 0.5;
+        refundAmount = booking.total - penalty;
+      }
     }
 
     // Free the reserved seats back to AVAILABLE
@@ -42,10 +62,8 @@ export async function PATCH(
       );
     }
 
-    // Delete reserved seat records
     await ReservedSeat.deleteMany({ bookingId: new mongoose.Types.ObjectId(bookingId) });
 
-    // Update booking status and mark payment as refunded
     booking.bookingStatus = 'CANCELLED';
     booking.paymentStatus = 'REFUNDED';
     await booking.save();
@@ -53,12 +71,16 @@ export async function PATCH(
     return NextResponse.json(
       {
         success: true,
-        message: 'Booking cancelled successfully.',
+        message: penalty > 0
+          ? `Booking cancelled. A 50% same-day cancellation fee ($${penalty.toFixed(2)}) applies. $${refundAmount.toFixed(2)} will be refunded.`
+          : 'Booking cancelled successfully. Full refund processed.',
         booking: {
           _id: booking._id.toString(),
           bookingReference: booking.bookingReference,
           bookingStatus: booking.bookingStatus,
           paymentStatus: booking.paymentStatus,
+          refundAmount,
+          penalty,
         },
       },
       { status: 200 }
