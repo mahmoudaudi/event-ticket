@@ -21,6 +21,9 @@ const bookingSchema = new mongoose.Schema(
     bookingStatus: { type: String, enum: ["PENDING", "CONFIRMED", "CANCELLED"], default: "PENDING" },
     qrCode: String,
     createdBy: { type: mongoose.Types.ObjectId, ref: "User" },
+    // Set for bookings paid via Stripe Checkout; used to make webhook/confirm
+    // handling idempotent (a session can be confirmed more than once).
+    stripeSessionId: { type: String, index: true, sparse: true, unique: true },
   },
   { timestamps: true }
 );

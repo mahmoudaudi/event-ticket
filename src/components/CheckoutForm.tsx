@@ -16,7 +16,7 @@ type Props = {
   payload: CheckoutPayload;
   onSubmit: (
     customer: { fullName: string; email: string; phone: string },
-    payment: { method: string; cardName?: string; cardNumber?: string; expiry?: string; cvv?: string },
+    payment: { method: 'CARD' | 'MOCK' },
     promo?: PromoInfo
   ) => Promise<void>;
   onBack?: () => void;
@@ -27,11 +27,7 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [method, setMethod] = useState('CARD');
-  const [cardName, setCardName] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvv, setCvv] = useState('');
+  const [method, setMethod] = useState<'CARD' | 'MOCK'>('CARD');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
@@ -58,12 +54,8 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Valid email required';
     if (!phone.trim()) e.phone = 'Phone number is required';
 
-    if (method === 'CARD') {
-      if (!cardNumber.replace(/\s/g, '').match(/^\d{12,19}$/)) e.cardNumber = 'Enter a valid card number';
-      if (!expiry.match(/^\d{2}\/\d{2}$/)) e.expiry = 'Enter expiry MM/YY';
-      if (!cvv.match(/^\d{3,4}$/)) e.cvv = 'Enter CVV';
-      if (!cardName.trim()) e.cardName = 'Cardholder name required';
-    }
+    // CARD payments are collected on Stripe's own hosted Checkout page, not
+    // here — we only need the buyer's contact details before redirecting.
 
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -110,7 +102,7 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
     if (!validate()) return;
     setLoading(true);
     try {
-      await onSubmit({ fullName, email, phone }, { method, cardName, cardNumber, expiry, cvv }, promo ?? undefined);
+      await onSubmit({ fullName, email, phone }, { method }, promo ?? undefined);
     } finally {
       setLoading(false);
     }
@@ -192,48 +184,27 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
         <div className="space-y-2">
           <label className="text-sm font-semibold text-slate-600">Payment method</label>
           <div className="flex gap-2">
-            <button type="button" onClick={() => setMethod('CARD')} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${method === 'CARD' ? 'border-amber-900 bg-amber-50 text-amber-900' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'}`}>Card</button>
+            <button type="button" onClick={() => setMethod('CARD')} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${method === 'CARD' ? 'border-amber-900 bg-amber-50 text-amber-900' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'}`}>Card (Stripe)</button>
             <button type="button" onClick={() => setMethod('MOCK')} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${method === 'MOCK' ? 'border-amber-900 bg-amber-50 text-amber-900' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'}`}>Mock</button>
           </div>
         </div>
 
         {method === 'CARD' ? (
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-600">Card Number</label>
-              <div className="relative">
-                <input className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 font-mono outline-none transition focus:border-amber-900 focus:ring-2 focus:ring-amber-100" placeholder="0000 0000 0000 0000" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} />
-                <div className="absolute right-3 top-1/2 flex -translate-y-1/2 gap-1">
-                  <span className="h-5 w-8 rounded-sm bg-slate-200" />
-                  <span className="h-5 w-8 rounded-sm bg-slate-200" />
-                </div>
-              </div>
-              {errors.cardNumber ? <p className="text-sm text-red-600">{errors.cardNumber}</p> : null}
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-600">Expiry Date</label>
-                <input placeholder="MM/YY" value={expiry} onChange={(e) => setExpiry(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-amber-900 focus:ring-2 focus:ring-amber-100" />
-                {errors.expiry ? <p className="text-sm text-red-600">{errors.expiry}</p> : null}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-600">CVV</label>
-                <div className="relative">
-                  <input placeholder="***" value={cvv} onChange={(e) => setCvv(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-amber-900 focus:ring-2 focus:ring-amber-100" />
-                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">help</span>
-                </div>
-                {errors.cvv ? <p className="text-sm text-red-600">{errors.cvv}</p> : null}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-600">Cardholder Name</label>
-              <input value={cardName} onChange={(e) => setCardName(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-amber-900 focus:ring-2 focus:ring-amber-100" />
-              {errors.cardName ? <p className="text-sm text-red-600">{errors.cardName}</p> : null}
-            </div>
+          <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <span className="material-symbols-outlined text-amber-900">lock</span>
+            <p className="text-sm text-slate-600">
+              You&apos;ll be redirected to Stripe&apos;s secure, hosted checkout to enter your card details. We never see or
+              store your card number.
+            </p>
           </div>
-        ) : null}
+        ) : (
+          <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <span className="material-symbols-outlined text-slate-500">science</span>
+            <p className="text-sm text-slate-600">
+              Mock payment for testing — confirms the booking immediately without going through Stripe.
+            </p>
+          </div>
+        )}
 
         <div className="flex items-center gap-2 py-2">
           <input type="checkbox" id="billing" checked readOnly className="h-5 w-5 rounded border-slate-300 text-amber-900 focus:ring-amber-900" />

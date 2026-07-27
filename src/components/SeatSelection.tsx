@@ -20,7 +20,7 @@ interface Seat {
   row: string;
   section: string;
   label: string;
-  status: 'AVAILABLE' | 'RESERVED';
+  status: 'AVAILABLE' | 'RESERVED' | 'BOOKED';
   price: number;
 }
 
@@ -29,7 +29,7 @@ interface ApiSeat {
   row: string;
   seatNumber: string | number;
   section: string;
-  status: 'AVAILABLE' | 'RESERVED';
+  status: 'AVAILABLE' | 'RESERVED' | 'BOOKED';
   price: number;
 }
 
@@ -282,7 +282,7 @@ export function SeatSelection() {
                       <div className="grid flex-1 grid-cols-[repeat(12,_minmax(0,1fr))] gap-3">
                         {rowSeats.map((seat) => {
                           const isSelected = selectedSeatIds.includes(seat.id);
-                          const disabled = seat.status === 'RESERVED';
+                          const disabled = seat.status === 'RESERVED' || seat.status === 'BOOKED';
                           const baseClass = disabled
                             ? 'border-slate-200 bg-slate-300 text-slate-500 cursor-not-allowed'
                             : isSelected

@@ -1,14 +1,23 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import CheckoutForm from '@/components/CheckoutForm';
 import CheckoutSummary from '@/components/CheckoutSummary';
 import { loadCheckout, clearCheckout, CheckoutPayload } from '@/lib/checkoutStorage';
 import { useAuth } from '@/context/AuthContext';
 
 export default function CheckoutPage() {
+  return (
+    <Suspense>
+      <CheckoutPageContent />
+    </Suspense>
+  );
+}
+
+function CheckoutPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [payload, setPayload] = useState<CheckoutPayload | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -26,14 +35,21 @@ export default function CheckoutPage() {
       return;
     }
     setPayload(p);
-  }, [authLoading, user, router]);
+    if (searchParams.get('cancelled') === '1') {
+      setError('Payment was cancelled. Your seats are still held briefly — you can try again below.');
+    }
+  }, [authLoading, user, router, searchParams]);
 
   const handleBack = () => router.back();
 
-  const handleSubmit = async (_customer: any, _payment: any, _promo?: any) => {
+  const handleSubmit = async (
+    customer: { fullName: string; email: string; phone: string },
+    payment: { method: 'CARD' | 'MOCK' },
+    promo?: { _id: string; discountType: 'PERCENTAGE' | 'FIXED'; discountValue: number }
+  ) => {
     setProcessing(true);
     setError(null);
-    
+
     try {
       if (!payload) {
         throw new Error('Checkout session expired. Please start over.');
@@ -47,18 +63,52 @@ export default function CheckoutPage() {
         throw new Error('No seats selected.');
       }
 
-      await new Promise((res) => setTimeout(res, 1400));
-
       const seatIds = payload.seats.map((s) => s.id);
       const bookingFee = 9;
 
-      const discount = _promo
-        ? _promo.discountType === 'PERCENTAGE'
-          ? payload.subtotal * (_promo.discountValue / 100)
-          : _promo.discountValue
+      const discount = promo
+        ? promo.discountType === 'PERCENTAGE'
+          ? payload.subtotal * (promo.discountValue / 100)
+          : promo.discountValue
         : 0;
 
       const totalAmount = payload.subtotal + bookingFee - discount;
+
+      if (payment.method === 'CARD') {
+        // Real payment: create a Stripe Checkout Session and redirect there.
+        // The booking itself isn't created until Stripe confirms payment —
+        // see /checkout/success and /api/webhooks/stripe.
+        const sessionResponse = await fetch('/api/checkout/create-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            eventId: payload.event._id,
+            seatIds,
+            subtotal: payload.subtotal,
+            discount,
+            total: totalAmount,
+            promoCodeId: promo?._id,
+            customerEmail: customer.email,
+          }),
+        });
+
+        if (!sessionResponse.ok) {
+          const errorData = await sessionResponse.json().catch(() => null);
+          throw new Error(errorData?.message || 'Failed to start payment.');
+        }
+
+        const { url } = await sessionResponse.json();
+        if (!url) {
+          throw new Error('Stripe did not return a checkout URL.');
+        }
+
+        // Full navigation to Stripe's hosted page — not a client-side route.
+        window.location.href = url;
+        return;
+      }
+
+      // Mock payment: confirms the booking immediately, no Stripe involved.
+      await new Promise((res) => setTimeout(res, 1400));
 
       const body: Record<string, unknown> = {
         eventId: payload.event._id,
@@ -76,8 +126,8 @@ export default function CheckoutPage() {
         total: totalAmount,
       };
 
-      if (_promo?._id) {
-        body.promoCodeId = _promo._id;
+      if (promo?._id) {
+        body.promoCodeId = promo._id;
       }
 
       const bookingResponse = await fetch('/api/bookings', {
@@ -94,21 +144,17 @@ export default function CheckoutPage() {
       }
 
       const bookingData = await bookingResponse.json();
-      
+
       if (!bookingData.booking?._id) {
         throw new Error('Booking creation failed: Invalid response from server');
       }
 
-      // Clear checkout session
       clearCheckout();
-
-      // Redirect to confirmation page with booking ID
       router.push(`/confirmation/${bookingData.booking._id}`);
     } catch (err) {
       console.error('Error during checkout:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
       setError(errorMessage);
-    } finally {
       setProcessing(false);
     }
   };
