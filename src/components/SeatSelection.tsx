@@ -8,6 +8,8 @@ interface Event {
   _id: string;
   title: string;
   venue: string;
+  city?: string;
+  bannerImage?: string;
   eventDate: string;
   startTime: string;
   endTime: string;
@@ -157,6 +159,8 @@ export function SeatSelection() {
         _id: event._id,
         title: event.title,
         venue: event.venue,
+        city: event.city,
+        bannerImage: event.bannerImage,
         eventDate: event.eventDate,
         startTime: event.startTime,
         endTime: event.endTime,

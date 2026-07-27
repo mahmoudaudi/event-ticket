@@ -10,6 +10,8 @@ export type CheckoutEvent = {
   _id: string;
   title: string;
   venue?: string;
+  city?: string;
+  bannerImage?: string;
   eventDate?: string | Date;
   startTime?: string;
   endTime?: string;

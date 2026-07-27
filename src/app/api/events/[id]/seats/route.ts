@@ -32,6 +32,8 @@ export async function GET(
         _id: String(event._id),
         title: event.title,
         venue: event.venue,
+        city: event.city,
+        bannerImage: event.bannerImage,
         eventDate: event.eventDate,
         startTime: event.startTime,
         endTime: event.endTime,

@@ -144,7 +144,7 @@ export default function BookingConfirmationPage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 h-20 bg-white/90 shadow-[0px_4px_20px_rgba(30,41,59,0.05)] backdrop-blur">
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <span className="cursor-pointer text-2xl font-bold text-amber-900">EventPremium</span>
+          <span className="cursor-pointer text-2xl font-bold text-amber-900">Aurum</span>
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-amber-900">verified</span>
             <span className="text-sm font-medium text-slate-600">Booking Confirmed</span>
@@ -403,7 +403,7 @@ export default function BookingConfirmationPage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-900">EventPremium</p>
+              <p className="text-sm font-semibold text-slate-900">Aurum</p>
               <p className="text-xs text-slate-600 mt-2">Elevating the event discovery and booking experience.</p>
             </div>
             <div className="flex gap-8">
@@ -424,7 +424,7 @@ export default function BookingConfirmationPage() {
             </div>
           </div>
           <div className="mt-8 border-t border-[#d9cfbf] pt-8">
-            <p className="text-center text-xs text-slate-600">© 2024 EventPremium. All rights reserved.</p>
+            <p className="text-center text-xs text-slate-600">© 2024 Aurum. All rights reserved.</p>
           </div>
         </div>
       </footer>

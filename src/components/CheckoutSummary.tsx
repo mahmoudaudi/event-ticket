@@ -22,13 +22,17 @@ export default function CheckoutSummary({ event, seats, fee = 9 }: Props) {
     }).format(new Date(event.eventDate));
   }, [event.eventDate]);
 
+  const hasBanner = !!event.bannerImage;
+
   return (
     <aside className="sticky top-28 space-y-4">
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="relative h-56">
-          <img className="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTCmNs2O_kBRTDpoDoTpI-PwI0NINQDULzGgCy_dWSXgtOaw5XjJDa96Mir5pqUmPAczyiVb8RSrugtOaPjXVsKusFXlIdBhdbm64kN8RSS_JIs9FNq6cFeWocpuBGEHOMyDtIp9WNBzroauyfLn-Yj3au9Yd9mQUoDPrV368IbP1qnErbHQ9RgeJ5uSMbhObm-Pst-VWHHT1Bhq-M2zXGQy31FiyKGVP1UE-Fi2rswV43CR3ndBQz8jJSdEa60m7B1u7rdE6IEI8" alt={event.title} />
+        <div className={`relative h-56 ${hasBanner ? '' : 'bg-gradient-to-br from-amber-900 to-amber-700'}`}>
+          {hasBanner ? (
+            <img className="h-full w-full object-cover" src={event.bannerImage} alt={event.title} />
+          ) : null}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-            <span className="mb-2 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-amber-900">Premium Experience</span>
+            <span className="mb-2 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-amber-900">Aurum</span>
             <h3 className="text-3xl font-semibold leading-tight text-white">
   {event.title}
 </h3>
@@ -48,7 +52,7 @@ export default function CheckoutSummary({ event, seats, fee = 9 }: Props) {
             <span className="material-symbols-outlined text-amber-900"></span>
             <div>
               <div className="text-sm font-semibold text-slate-900">{event.venue}</div>
-              <div className="text-sm text-slate-500">New York City, NY</div>
+              <div className="text-sm text-slate-500">{event.city || 'New York City, NY'}</div>
             </div>
           </div>
 

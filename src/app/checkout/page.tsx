@@ -105,20 +105,22 @@ export default function CheckoutPage() {
     }
   };
 
-  const pageTitle = 'Checkout | EventPremium';
+  const pageTitle = 'Checkout | Aurum';
+
+  const userInitial = user?.firstName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || '?';
 
   // Show error state if no payload or error occurred
   if (!payload) {
     return (
-      <div className="min-h-screen bg-[#f6efe4] text-slate-900">
+      <div className="min-h-screen bg-white text-slate-900">
         <header className="fixed top-0 left-0 right-0 z-50 h-20 bg-white/90 shadow-[0px_4px_20px_rgba(30,41,59,0.05)] backdrop-blur">
           <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <span className="cursor-pointer text-2xl font-bold text-amber-900">EventPremium</span>
+            <span className="cursor-pointer text-2xl font-bold text-amber-900">Aurum</span>
           </div>
         </header>
 
         <main className="mx-auto max-w-7xl px-4 pb-24 pt-28 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-md rounded-3xl border border-[#d9cfbf] bg-white p-8 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.12)] text-center">
+          <div className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm text-center">
             <div className="mb-4 text-5xl">⚠️</div>
             <h2 className="mb-2 text-2xl font-bold text-slate-900">No Session Found</h2>
             <p className="mb-6 text-slate-600">
@@ -137,27 +139,15 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f6efe4] text-slate-900">
+    <div className="min-h-screen bg-white text-slate-900">
       <header className="fixed top-0 left-0 right-0 z-50 h-20 bg-white/90 shadow-[0px_4px_20px_rgba(30,41,59,0.05)] backdrop-blur">
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-6">
-            <span className="cursor-pointer text-2xl font-bold text-amber-900">EventPremium</span>
-            <div className="hidden gap-5 md:flex">
-              <a className="text-sm font-medium text-slate-600 transition-colors hover:text-amber-900" href="#">Browse</a>
-              <a className="text-sm font-medium text-slate-600 transition-colors hover:text-amber-900" href="#">Categories</a>
-              <a className="text-sm font-medium text-slate-600 transition-colors hover:text-amber-900" href="#">Venues</a>
-            </div>
+            <span className="cursor-pointer text-2xl font-bold text-amber-900">Aurum</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden sm:block">
-              <div className="relative">
-                
-                <input className="w-64 rounded-lg border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-sm outline-none ring-0" placeholder="Search events..." type="text" />
-              </div>
-            </div>
-            <button className="material-symbols-outlined rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-100">notifications</button>
-            <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-slate-200">
-              <img className="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLkrEuH6peRv5d532W2tYzGZnK_JGHMefZgvQtGiBrNcAOZLLnETz2iZUcmNXz9AwqJW7B1AVnwq1M3BPNVMl4tCuFpvs8C8SJ1cacBaxzy8cWMMcd2npJGp3w5oGPH833iRoXacsSlaNZ5Aa4MYyceNH774n6W8reLjVeaVu2PLji62dGSR-zelaoxgVYyRY18_uvWSqoNEfKRu1n-ovjc5x1tLIZUkcNyG_cMCunwtONp-M0vIBSpclT2rq4dRmonkM6Apoxe9M" alt="avatar" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-900">
+              {userInitial}
             </div>
           </div>
         </div>
@@ -206,7 +196,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            <div className="rounded-3xl border border-[#d9cfbf] bg-white p-8 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.12)]">
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
               <CheckoutForm payload={payload} onSubmit={handleSubmit} onBack={handleBack} processing={processing} />
             </div>
           </div>
@@ -220,7 +210,7 @@ export default function CheckoutPage() {
       <footer className="mt-auto border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-4 py-12 sm:px-6 lg:flex-row lg:px-8">
           <div className="max-w-xs text-center lg:text-left">
-            <span className="text-2xl font-bold text-slate-900">EventPremium</span>
+            <span className="text-2xl font-bold text-slate-900">Aurum</span>
             <p className="mt-3 text-sm text-slate-600">Elevating the event discovery and booking experience for industry professionals worldwide.</p>
           </div>
           <div className="flex flex-wrap justify-center gap-8 text-sm text-slate-600">
