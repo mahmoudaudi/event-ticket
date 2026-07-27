@@ -6,7 +6,7 @@ const FIELD_CLASSES =
 
 interface FieldWrapperProps {
   label: string;
-  htmlFor: string;
+  htmlFor?: string;
   error?: string;
   children: ReactNode;
   className?: string;

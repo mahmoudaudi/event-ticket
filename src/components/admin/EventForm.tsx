@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { FieldWrapper, Input, Select, Textarea } from "@/components/ui/Field";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { LocationPicker } from "@/components/admin/LocationPicker";
 import type { AdminCategory, AdminEventDetail } from "@/types/admin";
 import { useToast } from "@/components/providers/ToastProvider";
 import { eventInputSchema } from "@/lib/validation/event";
@@ -199,17 +200,15 @@ export function EventForm({ mode, eventId, categories, initialData }: EventFormP
         </FieldWrapper>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <FieldWrapper label="Venue" htmlFor="venue" error={errors.venue}>
-          <Input id="venue" value={form.venue} onChange={(e) => update("venue", e.target.value)} required />
-        </FieldWrapper>
-        <FieldWrapper label="City" htmlFor="city" error={errors.city}>
-          <Input id="city" value={form.city} onChange={(e) => update("city", e.target.value)} required />
-        </FieldWrapper>
-      </div>
-
-      <FieldWrapper label="Address" htmlFor="address" error={errors.address}>
-        <Input id="address" value={form.address} onChange={(e) => update("address", e.target.value)} />
+      <FieldWrapper label="Location" error={errors.venue || errors.city}>
+        <LocationPicker
+          venue={form.venue}
+          address={form.address}
+          city={form.city}
+          onChange={(fields) => {
+            setForm((prev) => ({ ...prev, ...fields }));
+          }}
+        />
       </FieldWrapper>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
