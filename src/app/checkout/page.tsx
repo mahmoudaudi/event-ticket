@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CheckoutForm from '@/components/CheckoutForm';
 import CheckoutSummary from '@/components/CheckoutSummary';
-import { loadCheckout, clearCheckout, CheckoutPayload } from '@/lib/checkoutStorage';
+import { loadCheckout, CheckoutPayload } from '@/lib/checkoutStorage';
 import { useAuth } from '@/context/AuthContext';
 
 export default function CheckoutPage() {
@@ -44,7 +44,6 @@ function CheckoutPageContent() {
 
   const handleSubmit = async (
     customer: { fullName: string; email: string; phone: string },
-    payment: { method: 'CARD' | 'MOCK' },
     promo?: { _id: string; discountType: 'PERCENTAGE' | 'FIXED'; discountValue: number }
   ) => {
     setProcessing(true);
@@ -74,83 +73,35 @@ function CheckoutPageContent() {
 
       const totalAmount = payload.subtotal + bookingFee - discount;
 
-      if (payment.method === 'CARD') {
-        // Real payment: create a Stripe Checkout Session and redirect there.
-        // The booking itself isn't created until Stripe confirms payment —
-        // see /checkout/success and /api/webhooks/stripe.
-        const sessionResponse = await fetch('/api/checkout/create-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            eventId: payload.event._id,
-            seatIds,
-            subtotal: payload.subtotal,
-            discount,
-            total: totalAmount,
-            promoCodeId: promo?._id,
-            customerEmail: customer.email,
-          }),
-        });
-
-        if (!sessionResponse.ok) {
-          const errorData = await sessionResponse.json().catch(() => null);
-          throw new Error(errorData?.message || 'Failed to start payment.');
-        }
-
-        const { url } = await sessionResponse.json();
-        if (!url) {
-          throw new Error('Stripe did not return a checkout URL.');
-        }
-
-        // Full navigation to Stripe's hosted page — not a client-side route.
-        window.location.href = url;
-        return;
-      }
-
-      // Mock payment: confirms the booking immediately, no Stripe involved.
-      await new Promise((res) => setTimeout(res, 1400));
-
-      const body: Record<string, unknown> = {
-        eventId: payload.event._id,
-        seatIds,
-        tickets: [
-          {
-            ticketTypeId: payload.event._id,
-            quantity: payload.seats.length,
-            unitPrice: payload.seats[0]?.price || 0,
-            totalPrice: payload.subtotal,
-          },
-        ],
-        subtotal: payload.subtotal,
-        discount,
-        total: totalAmount,
-      };
-
-      if (promo?._id) {
-        body.promoCodeId = promo._id;
-      }
-
-      const bookingResponse = await fetch('/api/bookings', {
+      // Create a Stripe Checkout Session and redirect there. The booking
+      // itself isn't created until Stripe confirms payment — see
+      // /checkout/success and /api/webhooks/stripe.
+      const sessionResponse = await fetch('/api/checkout/create-session', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: payload.event._id,
+          seatIds,
+          subtotal: payload.subtotal,
+          discount,
+          total: totalAmount,
+          promoCodeId: promo?._id,
+          customerEmail: customer.email,
+        }),
       });
 
-      if (!bookingResponse.ok) {
-        const errorData = await bookingResponse.json();
-        throw new Error(errorData.message || 'Failed to create booking');
+      if (!sessionResponse.ok) {
+        const errorData = await sessionResponse.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to start payment.');
       }
 
-      const bookingData = await bookingResponse.json();
-
-      if (!bookingData.booking?._id) {
-        throw new Error('Booking creation failed: Invalid response from server');
+      const { url } = await sessionResponse.json();
+      if (!url) {
+        throw new Error('Stripe did not return a checkout URL.');
       }
 
-      clearCheckout();
-      router.push(`/confirmation/${bookingData.booking._id}`);
+      // Full navigation to Stripe's hosted page — not a client-side route.
+      window.location.href = url;
     } catch (err) {
       console.error('Error during checkout:', err);
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';

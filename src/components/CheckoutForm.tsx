@@ -16,7 +16,6 @@ type Props = {
   payload: CheckoutPayload;
   onSubmit: (
     customer: { fullName: string; email: string; phone: string },
-    payment: { method: 'CARD' | 'MOCK' },
     promo?: PromoInfo
   ) => Promise<void>;
   onBack?: () => void;
@@ -27,7 +26,6 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [method, setMethod] = useState<'CARD' | 'MOCK'>('CARD');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
@@ -102,7 +100,7 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
     if (!validate()) return;
     setLoading(true);
     try {
-      await onSubmit({ fullName, email, phone }, { method }, promo ?? undefined);
+      await onSubmit({ fullName, email, phone }, promo ?? undefined);
     } finally {
       setLoading(false);
     }
@@ -183,13 +181,6 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
 
         <div className="space-y-2">
           <label className="text-sm font-semibold text-slate-600">Payment method</label>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setMethod('CARD')} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${method === 'CARD' ? 'border-amber-900 bg-amber-50 text-amber-900' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'}`}>Card (Stripe)</button>
-            <button type="button" onClick={() => setMethod('MOCK')} className={`rounded-lg border px-4 py-2 text-sm font-semibold transition ${method === 'MOCK' ? 'border-amber-900 bg-amber-50 text-amber-900' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'}`}>Mock</button>
-          </div>
-        </div>
-
-        {method === 'CARD' ? (
           <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
             <span className="material-symbols-outlined text-amber-900">lock</span>
             <p className="text-sm text-slate-600">
@@ -197,14 +188,7 @@ export default function CheckoutForm({ payload, onSubmit, onBack, processing = f
               store your card number.
             </p>
           </div>
-        ) : (
-          <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-            <span className="material-symbols-outlined text-slate-500">science</span>
-            <p className="text-sm text-slate-600">
-              Mock payment for testing — confirms the booking immediately without going through Stripe.
-            </p>
-          </div>
-        )}
+        </div>
 
         <div className="flex items-center gap-2 py-2">
           <input type="checkbox" id="billing" checked readOnly className="h-5 w-5 rounded border-slate-300 text-amber-900 focus:ring-amber-900" />

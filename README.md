@@ -2,7 +2,7 @@
 
 A full-stack event ticketing platform built with **Next.js 16**, **TypeScript**, **Tailwind CSS**, **MongoDB**, and **NextAuth.js**.
 
-Users can browse events, select seats, apply promo codes, checkout (mock payment), receive e-tickets with QR codes, and cancel reservations. Admins manage events, bookings, users, promo codes, and view analytics.
+Users can browse events, select seats, apply promo codes, pay with a real card via **Stripe Checkout**, receive e-tickets with QR codes, and cancel reservations. Admins manage events, bookings, users, promo codes, and view analytics.
 
 Built by **Mahmoud Audi** · **Mohammad Ali** · **Mohammad Dib**
 
@@ -17,6 +17,7 @@ Built by **Mahmoud Audi** · **Mohammad Ali** · **Mohammad Dib**
 - [Seed Data](#seed-data)
 - [Login Credentials](#login-credentials)
 - [Accessing from Mobile](#accessing-from-mobile)
+- [Payments (Stripe)](#payments-stripe)
 - [Key Features](#key-features)
 - [Project Structure](#project-structure)
 - [API Endpoints](#api-endpoints)
@@ -41,7 +42,7 @@ Optional (for full functionality):
 | Google OAuth credentials | "Sign in with Google" |
 | SMTP credentials | Password reset emails |
 | Groq API key | Chatbot AI assistant |
-| Stripe keys | Real payment processing (currently mock) |
+| Stripe test-mode keys + [Stripe CLI](https://stripe.com/docs/stripe-cli#install) | Checkout payments — required to test the checkout flow at all, see [Payments (Stripe)](#payments-stripe) |
 
 ---
 
@@ -84,9 +85,8 @@ SMTP_FROM=you@gmail.com
 # Groq AI (chatbot)
 GROQ_API_KEY=xxx
 
-# Stripe
+# Stripe (see "Payments (Stripe)" below for how to test this locally)
 STRIPE_SECRET_KEY=sk_test_xxx
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
 ```
 
@@ -165,13 +165,71 @@ This creates:
 
 ---
 
+## Payments (Stripe)
+
+Checkout uses **Stripe Checkout** — a Stripe-hosted payment page. Card details
+are entered on Stripe's own page and never touch our server, so there's no
+raw card data to secure or store.
+
+### How it works
+
+1. On the checkout page, submitting the form calls `POST /api/checkout/create-session`.
+   This holds the selected seats (marks them `RESERVED` for 30 minutes so nobody
+   else can grab them mid-payment) and creates a Stripe Checkout Session for the
+   order total.
+2. The browser is redirected to Stripe's hosted page to enter card details.
+3. On success, Stripe redirects back to `/checkout/success?session_id=...`, which
+   calls `POST /api/checkout/confirm` to verify the payment actually went through,
+   then creates the `Booking` (seats flip to `BOOKED`), and redirects to the
+   existing `/confirmation/[bookingId]` page.
+4. `POST /api/webhooks/stripe` is a second, independent path to the same result —
+   it's the safety net for a buyer who closes the tab before step 3 completes
+   (`checkout.session.completed`), and it releases the seat hold if a session
+   expires unpaid (`checkout.session.expired`). Both this and step 3 call the
+   same idempotent helper (`fulfillBookingFromStripeSession` in
+   `src/lib/bookingFulfillment.ts`), so whichever one runs first wins — the
+   `Booking.stripeSessionId` field has a unique index that prevents a duplicate.
+
+### Setting it up locally
+
+1. Get a **test-mode** secret key from your Stripe Dashboard → Developers →
+   [API keys](https://dashboard.stripe.com/test/apikeys) (starts with `sk_test_...`).
+   Put it in `.env.local` as `STRIPE_SECRET_KEY`.
+2. Install the [Stripe CLI](https://stripe.com/docs/stripe-cli#install) and log in:
+   ```bash
+   stripe login
+   ```
+3. In a separate terminal, forward webhook events to your dev server (keep this
+   running while you test):
+   ```bash
+   stripe listen --forward-to localhost:3000/api/webhooks/stripe
+   ```
+   It prints a signing secret like `whsec_...` — put that in `.env.local` as
+   `STRIPE_WEBHOOK_SECRET`, then (re)start `npm run dev`.
+4. Go through the app: log in → pick an event → **Select Seats** → choose a seat →
+   **Continue to checkout** → fill in the contact fields → confirm. You'll land
+   on Stripe's hosted page.
+5. Pay with a [Stripe test card](https://stripe.com/docs/testing#cards):
+   - `4242 4242 4242 4242`, any future expiry (e.g. `12/34`), any 3-digit CVC, any ZIP — succeeds
+   - `4000 0000 0000 0002` — declined (useful for testing the error path)
+6. You should land back on the confirmation page with a real booking. Check the
+   `stripe listen` terminal — it should show `checkout.session.completed` with a
+   `200` response. Check the admin dashboard's Bookings table (or MongoDB
+   directly) — the booking should show `paymentStatus: PAID` and a `stripeSessionId`.
+
+Without `STRIPE_SECRET_KEY` set, any checkout attempt fails immediately with a
+clear error (`src/lib/stripe.ts` throws at startup if it's missing) rather than
+failing silently later.
+
+---
+
 ## Key Features
 
 ### Public / User
 
 - **Event discovery** — Browse all events with filters and search
 - **Interactive seat selection** — Visual seat map with availability
-- **Checkout** — Mock payment form with card or mock method
+- **Checkout** — Real card payments via Stripe Checkout (see [Payments (Stripe)](#payments-stripe))
 - **Promo codes** — Apply discount codes at checkout
 - **E-tickets** — QR code per booking (scannable URL to e-ticket page)
 - **Cancel reservation** — User can cancel from confirmation or e-ticket page
@@ -254,9 +312,16 @@ src/
 ### Bookings
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/bookings` | Create booking |
 | GET | `/api/bookings/[id]` | Booking details |
 | PATCH | `/api/bookings/[id]/cancel` | Cancel + refund |
+
+### Payments (Stripe)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/checkout/create-session` | Hold seats, create a Stripe Checkout Session |
+| POST | `/api/checkout/confirm` | Verify a paid session, create the booking |
+| POST | `/api/webhooks/stripe` | Stripe webhook (`checkout.session.completed` / `.expired`) |
+| POST | `/api/bookings` | Create a booking directly with no payment step. Kept for reference/testing; the checkout UI no longer calls this — it goes through `/api/checkout/create-session` above instead |
 
 ### Verification
 | Method | Endpoint | Description |
@@ -293,8 +358,8 @@ src/
 
 ## Known Limitations
 
-1. **Payment is mock** — No real Stripe integration yet. All bookings are auto-PAID. Stripe can be added later with minimal changes (checkout session + webhook).
-2. **No email sending** — SMTP is configured but sending is not fully wired. Password reset and booking confirmations don't send emails.
-3. **No real-time notifications** — The admin notification bell only queries PENDING bookings on load. No WebSocket/SSE.
-4. **Reservation expiry** — Seats reserved via the legacy reserve endpoint stay RESERVED indefinitely. No timeout mechanism.
-5. **Chatbot** — The Groq-powered chatbot exists but requires a valid API key to function.
+1. **No email sending** — SMTP is configured but sending is not fully wired. Password reset and booking confirmations don't send emails.
+2. **No real-time notifications** — The admin notification bell only queries PENDING bookings on load. No WebSocket/SSE.
+3. **Reservation expiry** — Seats reserved via the legacy `/api/events/[id]/reserve` endpoint stay `RESERVED` indefinitely (no timeout). Seats held during Stripe Checkout *are* time-bounded — they're released automatically after 30 minutes via the `checkout.session.expired` webhook — but that release only fires if the Stripe CLI (`stripe listen`) or a production webhook endpoint is actually running to receive it.
+4. **Chatbot** — The Groq-powered chatbot exists but requires a valid API key to function.
+5. **Stripe refunds** — Cancelling a booking marks it `REFUNDED` in the database but does not yet call Stripe's refund API to actually return the customer's money.
