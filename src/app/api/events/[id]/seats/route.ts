@@ -6,10 +6,10 @@ import Seat from '@/models/Seat';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ eventId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { eventId } = await params;
+    const { id: eventId } = await params;
 
     if (!eventId) {
       return NextResponse.json({ message: 'Event ID is required.' }, { status: 400 });

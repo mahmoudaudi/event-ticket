@@ -10,6 +10,10 @@ import type { NextAuthConfig } from "next-auth";
  * Node.js contexts (API routes, Server Components, Server Actions).
  */
 export const authConfig: NextAuthConfig = {
+  // Self-hosted (not behind a provider NextAuth auto-detects, like Vercel),
+  // so it must be told to trust the Host header — otherwise every request
+  // fails with "UntrustedHost" once NODE_ENV=production (npm run start).
+  trustHost: true,
   pages: {
     signIn: "/admin/login",
   },

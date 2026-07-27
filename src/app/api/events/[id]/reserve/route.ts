@@ -6,7 +6,7 @@ import Seat from '@/models/Seat';
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ eventId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
@@ -19,7 +19,7 @@ export async function POST(
     }
 
     const seatIds: string[] = body.seatIds;
-    const { eventId } = await params;
+    const { id: eventId } = await params;
 
     await connectDB();
 
