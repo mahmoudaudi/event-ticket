@@ -20,22 +20,34 @@ export function LocationPicker({ venue, address, city, onChange }: LocationPicke
   const mapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [marker, setMarker] = useState<google.maps.Marker | null>(null);
 
   useEffect(() => {
-    if (window.google) {
+    if (typeof window === "undefined") return;
+    if (window.google?.maps) {
       setLoaded(true);
       return;
     }
     const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!key) return;
+    if (!key) {
+      setLoadError(true);
+      return;
+    }
     window.initGoogleMaps = () => setLoaded(true);
     const script = document.createElement("script");
     script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=initGoogleMaps`;
     script.async = true;
     script.defer = true;
+    script.onerror = () => setLoadError(true);
     document.head.appendChild(script);
+
+    // Timeout after 10s
+    const timer = setTimeout(() => {
+      if (!window.google?.maps) setLoadError(true);
+    }, 10000);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -113,6 +125,44 @@ export function LocationPicker({ venue, address, city, onChange }: LocationPicke
       marker.setPosition(results[0].geometry.location);
     });
   }, [loaded, map, marker]);
+
+  if (!loaded && !loadError) {
+    return (
+      <div className="w-full h-[350px] rounded-lg bg-surface-container flex items-center justify-center">
+        <p className="text-sm text-on-surface-variant animate-pulse">Loading map...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="space-y-4">
+        <div className="w-full h-[350px] rounded-lg bg-surface-container flex items-center justify-center border border-outline-variant">
+          <div className="text-center px-6">
+            <p className="text-sm text-on-surface-variant mb-1">Google Maps could not load.</p>
+            <p className="text-xs text-on-surface-variant">Enter location manually below.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-on-surface mb-1">Venue</label>
+            <input value={venue} onChange={(e) => onChange({ venue: e.target.value, address, city })}
+              className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-on-surface mb-1">City</label>
+            <input value={city} onChange={(e) => onChange({ venue, address, city: e.target.value })}
+              className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-on-surface mb-1">Address</label>
+          <input value={address} onChange={(e) => onChange({ venue, address: e.target.value, city })}
+            className="w-full rounded-lg border border-outline-variant bg-surface px-3.5 py-2.5 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
