@@ -284,11 +284,14 @@ async function seed() {
         total: subtotal,
         paymentStatus,
         bookingStatus,
-        qrCode: `/bookings/${booking._id}`,
+        qrCode: `EP-${bookingCounter}`,
         createdBy: customer._id,
         createdAt,
         updatedAt: createdAt,
       });
+
+      booking.qrCode = `/bookings/${booking._id}`;
+      await booking.save();
 
       if (paymentStatus === "PAID") {
         await Payment.create({
