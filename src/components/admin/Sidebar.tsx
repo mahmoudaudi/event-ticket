@@ -11,7 +11,6 @@ import {
   ScrollText,
   Settings,
   Plus,
-  CircleHelp,
   LogOut,
   X,
 } from "lucide-react";
@@ -103,13 +102,6 @@ export function Sidebar({ adminName }: SidebarProps) {
         </Link>
 
         <div className="mt-auto flex flex-col gap-4">
-          <a
-            href="mailto:support@crescentlive.com"
-            className="flex items-center gap-2 text-sm font-medium text-ink-muted hover:text-ink"
-          >
-            <CircleHelp className="h-4 w-4" />
-            Help Center
-          </a>
 
           <div className="flex items-center gap-3 border-t border-border pt-4">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand">
