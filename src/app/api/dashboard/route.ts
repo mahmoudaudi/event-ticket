@@ -25,10 +25,21 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 })
       .lean();
 
-    const totalSpent = bookings.reduce((sum: number, b: any) => sum + (b.total || 0), 0);
     const eventCount = bookings.length;
-    const points = Math.min(eventCount * 100, 1000);
-    const tier = eventCount >= 15 ? "Platinum" : eventCount >= 8 ? "Gold" : eventCount >= 3 ? "Silver" : "Bronze";
+    const totalSpent = bookings.reduce((sum: number, b: any) => sum + (b.total || 0), 0);
+    const points = eventCount * 100;
+
+    const TIERS = [
+      { name: "Bronze", min: 0, next: 3 },
+      { name: "Silver", min: 3, next: 8 },
+      { name: "Gold", min: 8, next: 15 },
+      { name: "Platinum", min: 15, next: Infinity },
+    ];
+    const current = TIERS.findLast((t) => eventCount >= t.min)!;
+    const next = TIERS.find((t) => t.name === current.name)?.next ?? 0;
+    const tier = current.name;
+    const nextTier = current.next === Infinity ? null : TIERS.find((t) => t.min === current.next)?.name ?? null;
+    const pointsToNext = nextTier ? (next - eventCount) * 100 : 0;
 
     const result = {
       user: {
@@ -40,8 +51,8 @@ export async function GET(req: NextRequest) {
       membership: {
         tier,
         points,
-        nextTier: tier === "Platinum" ? null : tier === "Gold" ? "Platinum" : tier === "Silver" ? "Gold" : "Silver",
-        pointsToNext: tier === "Platinum" ? 0 : tier === "Gold" ? 1000 - points : tier === "Silver" ? 500 - points : 300 - points,
+        nextTier,
+        pointsToNext,
         totalEvents: eventCount,
         totalSpent,
       },

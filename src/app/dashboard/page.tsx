@@ -296,9 +296,9 @@ export default function DashboardPage() {
               {data?.membership?.nextTier && (
                 <>
                   <div className="mt-4 w-full bg-surface-variant h-2 rounded-full overflow-hidden">
-                    <div className="bg-primary h-full rounded-full" style={{ width: `${Math.min((data.membership.points / (data.membership.points + data.membership.pointsToNext)) * 100, 100)}%` }} />
+                    <div className="bg-primary h-full rounded-full" style={{ width: `${Math.min((data.membership.totalEvents / (data.membership.totalEvents + (data.membership.pointsToNext / 100))) * 100, 100)}%` }} />
                   </div>
-                  <p className="mt-2 text-xs text-secondary-fixed-dim text-right">{data.membership.points} / {data.membership.points + data.membership.pointsToNext} pts to {data.membership.nextTier}</p>
+                  <p className="mt-2 text-xs text-secondary-fixed-dim text-right">{data.membership.totalEvents} / {data.membership.totalEvents + (data.membership.pointsToNext / 100)} events to {data.membership.nextTier}</p>
                 </>
               )}
             </div>
