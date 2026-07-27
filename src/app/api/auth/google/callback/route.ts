@@ -59,7 +59,8 @@ export async function GET(req: NextRequest) {
       { expiresIn: "7d" }
     );
 
-    const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
+    const redirectUrl = user.role === "ADMIN" ? "/admin" : "/dashboard";
+    const response = NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}${redirectUrl}`);
     const userData = {
       id: user._id,
       firstName: user.firstName,

@@ -57,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(newUser);
     localStorage.setItem("token", newToken);
     localStorage.setItem("user", JSON.stringify(newUser));
+    document.cookie = `token=${newToken}; path=/; max-age=${60*60*24*7}`;
+    document.cookie = `user=${encodeURIComponent(JSON.stringify(newUser))}; path=/; max-age=${60*60*24*7}`;
   };
 
   const logout = () => {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
-import ChatWidgetWrapper from "@/components/ChatWidgetWrapper";
+import AdminCheckWrapper from "@/components/AdminCheckWrapper";
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://aurum.com";
 
@@ -69,7 +69,7 @@ export default function RootLayout({
       </head>
       <body className="bg-background text-on-surface font-body antialiased selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
         <Providers>{children}</Providers>
-        <ChatWidgetWrapper />
+        <AdminCheckWrapper />
       </body>
     </html>
   );

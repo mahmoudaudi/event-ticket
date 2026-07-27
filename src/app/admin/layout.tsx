@@ -1,18 +1,5 @@
-import { Manrope, Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { ToastProvider } from "@/components/providers/ToastProvider";
-
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
 
 /**
  * Scopes the admin dashboard's NextAuth session and font tokens to /admin
@@ -21,7 +8,8 @@ const inter = Inter({
  */
 export default function AdminSectionLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${manrope.variable} ${inter.variable} font-body antialiased`}>
+    <div className="font-body antialiased">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
       <SessionProvider>
         <ToastProvider>{children}</ToastProvider>
       </SessionProvider>

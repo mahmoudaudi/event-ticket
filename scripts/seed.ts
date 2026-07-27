@@ -8,6 +8,8 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 import mongoose from "mongoose";
+import dns from "dns";
+dns.setDefaultResultOrder("ipv4first");
 import { connectDB } from "../src/lib/db";
 import { hashPassword } from "../src/lib/password";
 import {
@@ -35,10 +37,9 @@ function randomInt(min: number, max: number): number {
 
 async function seed() {
   await connectDB();
-  console.log("Connected to MongoDB. Clearing existing collections...");
+  console.log("Connected to MongoDB.");
 
   await Promise.all([
-    User.deleteMany({}),
     Category.deleteMany({}),
     Event.deleteMany({}),
     TicketType.deleteMany({}),
@@ -48,40 +49,22 @@ async function seed() {
     Seat.deleteMany({}),
   ]);
 
-  // --- Users -----------------------------------------------------------
-  const adminPassword = await hashPassword("Admin123!");
-  const userPassword = await hashPassword("Password123!");
+  // --- Users (reuse existing) -----------------------------------------
+  let admin = await User.findOne({ role: "ADMIN" });
+  if (!admin) {
+    console.log("No admin found. Creating one...");
+    const pwd = await hashPassword("Admin123!");
+    admin = await User.create({ firstName: "Alex", lastName: "Rivera", email: "admin@crescentlive.com", password: pwd, phone: "555-010-0001", role: "ADMIN" });
+  }
 
-  const admin = await User.create({
-    firstName: "Alex",
-    lastName: "Rivera",
-    email: "admin@crescentlive.com",
-    password: adminPassword,
-    phone: "555-010-0001",
-    role: "ADMIN",
-  });
-
-  const customerNames = [
-    ["Jane", "Doe"],
-    ["Marcus", "Thorne"],
-    ["Elena", "Lopez"],
-    ["Sam", "Knight"],
-    ["Priya", "Nair"],
-    ["Omar", "Haddad"],
-  ];
-  const customers = await User.insertMany(
-    customerNames.map(([firstName, lastName], i) => ({
-      firstName,
-      lastName,
-      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
-      password: userPassword,
-      phone: `555-010-01${String(i + 1).padStart(2, "0")}`,
-      role: "USER",
-      createdAt: daysFromNow(-randomInt(1, 45)),
-    }))
-  );
-
-  console.log(`Created ${customers.length + 1} users.`);
+  let customers = await User.find({ role: "USER" });
+  if (customers.length === 0) {
+    console.log("No users found. Creating sample users...");
+    const userPassword = await hashPassword("Password123!");
+    const names = [["Jane","Doe"],["Marcus","Thorne"],["Elena","Lopez"],["Sam","Knight"],["Priya","Nair"],["Omar","Haddad"]];
+    customers = await User.insertMany(names.map(([fn, ln], i) => ({ firstName: fn, lastName: ln, email: `${fn.toLowerCase()}.${ln.toLowerCase()}@example.com`, password: userPassword, phone: `555-010-01${String(i+1).padStart(2,"0")}`, role: "USER", createdAt: daysFromNow(-randomInt(1,45)) })));
+  }
+  console.log(`Using ${customers.length} existing users.`);
 
   // --- Categories --------------------------------------------------------
   const categories = await Category.insertMany([

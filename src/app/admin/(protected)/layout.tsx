@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { auth } from "@/lib/auth";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { MobileSidebarProvider } from "@/components/admin/MobileSidebarContext";
@@ -15,16 +16,35 @@ import { MobileSidebarProvider } from "@/components/admin/MobileSidebarContext";
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
-    redirect("/admin/login?callbackUrl=/admin");
+  if (session?.user?.role === "ADMIN") {
+    return (
+      <MobileSidebarProvider>
+        <div className="flex min-h-screen bg-cream">
+          <Sidebar adminName={session.user.name ?? "Admin"} />
+          <div className="min-w-0 flex-1 overflow-x-hidden">{children}</div>
+        </div>
+      </MobileSidebarProvider>
+    );
   }
 
-  return (
-    <MobileSidebarProvider>
-      <div className="flex min-h-screen bg-cream">
-        <Sidebar adminName={session.user.name ?? "Admin"} />
-        <div className="min-w-0 flex-1 overflow-x-hidden">{children}</div>
-      </div>
-    </MobileSidebarProvider>
-  );
+  // Fallback: check app's JWT user cookie
+  try {
+    const cookieStore = await cookies();
+    const userCookie = cookieStore.get("user");
+    if (userCookie) {
+      const userData = JSON.parse(decodeURIComponent(userCookie.value));
+      if (userData.role === "ADMIN") {
+        return (
+          <MobileSidebarProvider>
+            <div className="flex min-h-screen bg-cream">
+              <Sidebar adminName={userData.firstName ? `${userData.firstName} ${userData.lastName || ""}` : "Admin"} />
+              <div className="min-w-0 flex-1 overflow-x-hidden">{children}</div>
+            </div>
+          </MobileSidebarProvider>
+        );
+      }
+    }
+  } catch {}
+
+  redirect("/admin/login?callbackUrl=/admin");
 }

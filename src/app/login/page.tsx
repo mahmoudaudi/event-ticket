@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { AuthAlert, useToast } from "@/components/Toast";
 
@@ -17,6 +17,7 @@ export default function LoginPage() {
 function LoginContent() {
   const { login } = useAuth();
   const { showToast } = useToast();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,6 +73,13 @@ function LoginContent() {
       if (!res.ok) return setServerError(data.error);
       login(data.token, data.user);
       showToast("Welcome back!", "success");
+      document.cookie = `token=${data.token}; path=/; max-age=${60*60*24*7}`;
+      document.cookie = `user=${encodeURIComponent(JSON.stringify(data.user))}; path=/; max-age=${60*60*24*7}`;
+      if (data.user?.role === "ADMIN") {
+        window.location.href = "/admin/events";
+      } else {
+        router.push("/");
+      }
     } catch {
       setServerError("Something went wrong. Please try again.");
     } finally {
