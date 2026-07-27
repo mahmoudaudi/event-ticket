@@ -12,7 +12,7 @@ import dns from "dns";
 dns.setDefaultResultOrder("ipv4first");
 import { connectDB } from "../src/lib/db";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 import { hashPassword } from "../src/lib/password";
 import {
   User,

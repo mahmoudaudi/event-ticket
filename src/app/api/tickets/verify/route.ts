@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
+import "@/models/Event";
+import "@/models/User";
 
 export async function GET(req: NextRequest) {
   try {
-    const code = req.nextUrl.searchParams.get("code") || req.nextUrl.pathname.split("/verify/")[1];
+    let code = req.nextUrl.searchParams.get("code") || "";
     if (!code) {
       return NextResponse.json({ valid: false, message: "Missing ticket code" }, { status: 400 });
+    }
+
+    // Extract booking reference from full URL if present
+    const urlMatch = code.match(/\/bookings\/([^/]+)/);
+    if (urlMatch) {
+      code = urlMatch[1];
     }
 
     await connectDB();
