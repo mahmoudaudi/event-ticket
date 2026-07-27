@@ -11,7 +11,7 @@ import type { NextAuthConfig } from "next-auth";
  */
 export const authConfig: NextAuthConfig = {
   pages: {
-    signIn: "/login",
+    signIn: "/admin/login",
   },
   session: {
     strategy: "jwt",
@@ -19,7 +19,9 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     /**
      * Route-level gate evaluated by the middleware on every matched request.
-     * Returning `false` redirects the visitor to the `signIn` page above.
+     * Only `/admin/*` is matched (see `middleware.ts`) — `/bookings/*` uses
+     * the public site's own JWT cookie via `requireUser()` in
+     * `src/lib/guards.ts` instead of a NextAuth session.
      */
     authorized({ auth, request }) {
       const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");

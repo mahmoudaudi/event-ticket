@@ -171,7 +171,7 @@
 }
 
 /*
- * Design tokens for Crescent Live's admin dashboard.
+ * Design tokens for Crescent Live's admin dashboard and booking/e-ticket pages.
  * Palette and type pairing are derived directly from the approved Stitch
  * mockups (warm cream surfaces, deep olive-gold accent, brass highlight).
  */
@@ -251,5 +251,12 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* E-ticket page: strip the cream background when printed/exported to PDF. */
+@media print {
+  body {
+    background: white;
   }
 }

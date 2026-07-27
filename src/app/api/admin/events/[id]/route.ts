@@ -38,6 +38,16 @@ export const DELETE = withErrorLogging(async (_request: Request, { params }: Rou
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  await deleteAdminEvent(id);
+  const result = await deleteAdminEvent(id);
+
+  if (!result.success) {
+    return NextResponse.json(
+      {
+        error: `This event has ${result.bookingCount} existing booking${result.bookingCount === 1 ? "" : "s"}. Set its status to Cancelled instead of deleting it — deleting would leave those ticket holders with a broken booking.`,
+      },
+      { status: 409 }
+    );
+  }
+
   return NextResponse.json({ success: true });
 });

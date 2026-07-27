@@ -160,9 +160,31 @@ export async function updateAdminEvent(id: string, data: EventInput) {
   await Event.findByIdAndUpdate(id, data);
 }
 
-export async function deleteAdminEvent(id: string) {
+export interface DeleteEventResult {
+  success: boolean;
+  /** Present only when success is false — the existing-bookings count that blocked deletion. */
+  bookingCount?: number;
+}
+
+/**
+ * Deletes an event, but only if nobody has booked it yet. A ticketing
+ * platform must never let an event with real bookings disappear out from
+ * under its ticket holders — that leaves them with a booking that points
+ * at nothing (exactly the orphaned-reference bug this guard prevents).
+ * Admins who need to call off an event with existing bookings should set
+ * its status to CANCELLED instead, which keeps the booking history intact
+ * and still visible to affected users.
+ */
+export async function deleteAdminEvent(id: string): Promise<DeleteEventResult> {
   await connectDB();
+
+  const bookingCount = await Booking.countDocuments({ eventId: id });
+  if (bookingCount > 0) {
+    return { success: false, bookingCount };
+  }
+
   await Promise.all([Event.findByIdAndDelete(id), TicketType.deleteMany({ eventId: id })]);
+  return { success: true };
 }
 
 /** Clones an event and its ticket tiers as a new DRAFT, with fresh (unsold) capacity. */

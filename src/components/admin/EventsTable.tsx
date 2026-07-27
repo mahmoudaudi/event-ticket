@@ -62,7 +62,8 @@ export function EventsTable({ initialData }: EventsTableProps) {
       toast.success(`"${event.title}" was deleted.`);
       router.refresh();
     } else {
-      toast.error(`Couldn't delete "${event.title}". Please try again.`);
+      const payload = await res.json().catch(() => null);
+      toast.error(payload?.error ?? `Couldn't delete "${event.title}". Please try again.`);
     }
     setOpenMenuId(null);
   }
