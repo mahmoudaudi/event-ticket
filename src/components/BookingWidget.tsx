@@ -1,8 +1,11 @@
+import Link from "next/link";
+
 interface Ticket {
   id: string; name: string; price: number; capacity: number; remaining: number;
 }
 
 interface BookingWidgetProps {
+  eventId: string;
   minPrice: number;
   totalRemaining: number;
   firstTicket: Ticket | undefined;
@@ -10,7 +13,7 @@ interface BookingWidgetProps {
   time: string;
 }
 
-export default function BookingWidget({ minPrice, totalRemaining, firstTicket, date, time }: BookingWidgetProps) {
+export default function BookingWidget({ eventId, minPrice, totalRemaining, firstTicket, date, time }: BookingWidgetProps) {
   return (
     <div className="bg-surface-container-lowest p-6 rounded-xl shadow-[0px_10px_30px_rgba(30,41,59,0.08)] border border-primary/20">
       <div className="flex justify-between items-end mb-6">
@@ -41,10 +44,13 @@ export default function BookingWidget({ minPrice, totalRemaining, firstTicket, d
           <span className="text-on-surface">{time}</span>
         </div>
       </div>
-      <button className="w-full py-4 bg-primary text-on-primary rounded-lg text-[24px] leading-[32px] font-semibold font-headline hover:opacity-90 transition-all flex items-center justify-center gap-2 group cursor-pointer">
+      <Link
+        href={`/events/${eventId}/seats`}
+        className="w-full py-4 bg-primary text-on-primary rounded-lg text-[24px] leading-[32px] font-semibold font-headline hover:opacity-90 transition-all flex items-center justify-center gap-2 group cursor-pointer"
+      >
         Select Seats
         <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-      </button>
+      </Link>
       <p className="mt-4 text-center text-[14px] leading-[20px] text-on-surface-variant">No hidden booking fees. Secure checkout via Stripe.</p>
     </div>
   );

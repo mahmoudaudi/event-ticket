@@ -87,6 +87,7 @@ export default function EventDetailClient({ id }: { id: string }) {
           <div className="lg:col-span-4">
             <div className="sticky top-24 space-y-4">
               <BookingWidget
+                eventId={id}
                 minPrice={minPrice} totalRemaining={totalRemaining}
                 firstTicket={firstTicket} date={event.date} time={event.time}
               />

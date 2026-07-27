@@ -18,6 +18,7 @@ import {
   Booking,
   PromoCode,
   Payment,
+  Seat,
 } from "../src/models";
 
 /** Returns a Date offset by `days` from now (negative = past, positive = future). */
@@ -44,6 +45,7 @@ async function seed() {
     Booking.deleteMany({}),
     PromoCode.deleteMany({}),
     Payment.deleteMany({}),
+    Seat.deleteMany({}),
   ]);
 
   // --- Users -----------------------------------------------------------
@@ -207,6 +209,34 @@ async function seed() {
   }
 
   console.log(`Created ${events.length} events with ticket types.`);
+
+  // --- Seats (a small reserved-seating map for the first couple of
+  // published events, to exercise the seat-selection/checkout flow) --------
+  const seatedEvents = events.filter((e) => e.status === "PUBLISHED").slice(0, 2);
+  const sections = [
+    { name: "Floor", rows: ["A", "B"], seatsPerRow: 6, price: 120 },
+    { name: "Balcony", rows: ["C", "D"], seatsPerRow: 8, price: 65 },
+  ];
+  let seatCount = 0;
+  for (const event of seatedEvents) {
+    for (const section of sections) {
+      for (const row of section.rows) {
+        for (let seatNumber = 1; seatNumber <= section.seatsPerRow; seatNumber++) {
+          const isReserved = Math.random() < 0.15;
+          await Seat.create({
+            eventId: event._id,
+            section: section.name,
+            row,
+            seatNumber: String(seatNumber),
+            status: isReserved ? "RESERVED" : "AVAILABLE",
+            price: section.price,
+          });
+          seatCount += 1;
+        }
+      }
+    }
+  }
+  console.log(`Created ${seatCount} seats across ${seatedEvents.length} events.`);
 
   // --- Promo codes ---------------------------------------------------------
   await PromoCode.insertMany([
