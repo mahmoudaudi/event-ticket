@@ -3,6 +3,7 @@ import { Topbar } from "@/components/admin/Topbar";
 import { Card } from "@/components/ui/Card";
 import { EventForm } from "@/components/admin/EventForm";
 import { TicketTypeManager } from "@/components/admin/TicketTypeManager";
+import { SeatManager } from "@/components/admin/SeatManager";
 import { getAdminEventDetail, getCategories } from "@/lib/admin/events";
 
 export const metadata = { title: "Edit Event" };
@@ -30,6 +31,11 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
         <Card className="max-w-2xl">
           <h2 className="mb-5 font-display text-lg font-bold text-ink">Ticket tiers</h2>
           <TicketTypeManager eventId={event.id} initialTicketTypes={event.ticketTypes} />
+        </Card>
+
+        <Card className="max-w-2xl">
+          <h2 className="mb-5 font-display text-lg font-bold text-ink">Seat map</h2>
+          <SeatManager eventId={event.id} />
         </Card>
       </div>
     </>
