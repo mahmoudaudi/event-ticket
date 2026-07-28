@@ -11,6 +11,10 @@ const userSchema = new mongoose.Schema(
     profileImage: String,
     isActive: { type: Boolean, default: true },
     marketingConsent: { type: Boolean, default: false },
+    resetOTP: String,
+    resetOTPExpiry: Date,
+    resetPasswordToken: String,
+    resetPasswordExpiry: Date,
   },
   { timestamps: true }
 );
