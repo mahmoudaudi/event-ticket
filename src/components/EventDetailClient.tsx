@@ -9,6 +9,8 @@ import BookingWidget from "@/components/BookingWidget";
 import OrganizerCard from "@/components/OrganizerCard";
 import ShareWidget from "@/components/ShareWidget";
 import EventFooter from "@/components/EventFooter";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/Toast";
 
 interface Ticket {
   id: string; name: string; price: number; capacity: number; remaining: number;
@@ -21,6 +23,8 @@ interface EventDetail {
 }
 
 export default function EventDetailClient({ id }: { id: string }) {
+  const { user, logout } = useAuth();
+  const { showToast } = useToast();
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,10 +62,25 @@ export default function EventDetailClient({ id }: { id: string }) {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-surface shadow-[0px_4px_20px_rgba(30,41,59,0.05)] h-20">
         <div className="flex justify-between items-center w-full px-[16px] md:px-[40px] max-w-[1280px] mx-auto h-full">
           <Link href="/" className="text-[24px] leading-[32px] font-semibold font-headline font-bold text-primary">Aurum</Link>
-          <Link href="/login" className="hidden sm:flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors text-[14px] leading-[20px] tracking-[0.02em] font-medium group">
-            <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">login</span>
-            Sign in
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard" className="hidden sm:flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors text-[14px] leading-[20px] tracking-[0.02em] font-medium group">
+                <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">dashboard</span>
+                Dashboard
+              </Link>
+              <span className="hidden sm:block text-[14px] leading-[20px] font-medium text-on-surface">
+                {user.firstName}
+              </span>
+              <button onClick={() => { logout(); showToast("Logged out successfully", "info"); }} className="text-sm text-on-surface-variant hover:text-error transition-colors cursor-pointer" title="Logout">
+                <span className="material-symbols-outlined text-[20px]">logout</span>
+              </button>
+            </div>
+          ) : (
+            <Link href="/login" className="hidden sm:flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors text-[14px] leading-[20px] tracking-[0.02em] font-medium group">
+              <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">login</span>
+              Sign in
+            </Link>
+          )}
         </div>
       </nav>
 
