@@ -157,6 +157,8 @@ async function seed() {
   const ticketTypesByEvent: Record<string, mongoose.Document[]> = {};
 
   for (const def of eventDefs) {
+    const slug = def.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
+    const bannerImage = `https://placehold.co/800x400/1a1a2e/e0e0e0?text=${encodeURIComponent(def.title)}`;
     const event = await Event.create({
       title: def.title,
       description:
@@ -169,7 +171,7 @@ async function seed() {
       startTime: "8:00 PM",
       endTime: "10:30 PM",
       organizer: "Crescent Live Event Hall",
-      bannerImage: "",
+      bannerImage,
       images: [],
       status: def.status,
       createdBy: admin._id,
