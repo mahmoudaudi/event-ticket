@@ -10,7 +10,7 @@ interface EventData {
   _id: string;
   title: string;
   description: string;
-  bannerImage?: string;
+  img?: string;
   venue: string;
   city: string;
   eventDate: string;
@@ -117,8 +117,8 @@ export default function EventsPage() {
                   className="rounded-2xl bg-surface-container-lowest overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
                 >
                   <div className="h-48 bg-surface-container-highest overflow-hidden">
-                    {event.bannerImage ? (
-                      <img src={event.bannerImage} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    {event.img ? (
+                      <img src={event.img} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-on-surface-variant">
                         <span className="material-symbols-outlined text-4xl">event</span>
