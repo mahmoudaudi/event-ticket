@@ -4,14 +4,17 @@ import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 import ReservedSeat from '@/models/ReservedSeat';
 import Event from '@/models/Event';
+import { requireUser } from '@/lib/guards';
 
 async function updateSeats(filter: Record<string, any>, update: Record<string, any>) {
+  const col = mongoose.connection.db?.collection("seats");
+  if (!col) throw new Error("Database not connected");
   try {
-    await mongoose.connection.db!.collection("seats").updateMany(filter, update, {
+    await col.updateMany(filter, update, {
       bypassDocumentValidation: true,
     } as any);
   } catch {
-    await mongoose.connection.db!.collection("seats").updateMany(filter, update);
+    await col.updateMany(filter, update);
   }
 }
 
@@ -20,6 +23,11 @@ export async function PATCH(
   { params }: { params: Promise<{ bookingId: string }> }
 ) {
   try {
+    const session = await requireUser();
+    if (!session) {
+      return NextResponse.json({ message: 'Unauthorized. Please log in.' }, { status: 401 });
+    }
+
     const { bookingId } = await params;
 
     if (!bookingId) {
@@ -32,10 +40,13 @@ export async function PATCH(
 
     await connectDB();
 
-    const booking = await Booking.findById(bookingId).populate('eventId', 'eventDate');
-
+    const booking = await Booking.findById(bookingId);
     if (!booking) {
       return NextResponse.json({ message: 'Booking not found.' }, { status: 404 });
+    }
+
+    if (booking.userId.toString() !== session.user.id) {
+      return NextResponse.json({ message: 'You can only cancel your own bookings.' }, { status: 403 });
     }
 
     if (booking.bookingStatus === 'CANCELLED') {
@@ -43,7 +54,7 @@ export async function PATCH(
     }
 
     // Check if cancellation is on the same day as the event
-    const event = booking.eventId as unknown as { eventDate?: Date };
+    const event = await Event.findById(booking.eventId).select('eventDate');
     let refundAmount = booking.total;
     let penalty = 0;
 
@@ -92,6 +103,7 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
+    console.error('Error cancelling booking:', error);
     return NextResponse.json(
       { message: 'Internal server error', error: (error as Error).message },
       { status: 500 }

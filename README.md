@@ -14,10 +14,10 @@ Opens at `http://localhost:3000`.
 
 ## Test Accounts (after seeding)
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@crescentlive.com | Admin123! |
-| User | jane.doe@example.com | Password123! |
+| Role  | Email                | Password     |
+| ----- | -------------------- | ------------ |
+| Admin | admin@aurum.com      | Admin123!    |
+| User  | jane.doe@example.com | Password123! |
 
 ## Tech Stack
 
@@ -26,6 +26,7 @@ Next.js 16 (Turbopack), React 19, TypeScript 5, Tailwind CSS 4, MongoDB (Mongoos
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` and fill in:
+
 - `MONGODB_URI` — MongoDB Atlas connection string
 - `JWT_SECRET` / `AUTH_SECRET` — signing secrets
 - `SMTP_*` — Gmail app password for email
@@ -36,13 +37,13 @@ Copy `.env.example` to `.env.local` and fill in:
 
 ## Scripts
 
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build |
-| `npm start` | Start production server |
-| `npm run seed` | Seed database with sample data |
-| `npm run lint` | Run ESLint |
+| Command         | Purpose                        |
+| --------------- | ------------------------------ |
+| `npm run dev`   | Start dev server               |
+| `npm run build` | Production build               |
+| `npm start`     | Start production server        |
+| `npm run seed`  | Seed database with sample data |
+| `npm run lint`  | Run ESLint                     |
 
 ## Project Map
 

@@ -39,6 +39,11 @@ function LoginContent() {
       setServerError(messages[error] || "Google sign in failed.");
       window.history.replaceState({}, "", window.location.pathname);
     }
+    const suspended = sessionStorage.getItem("suspended");
+    if (suspended === "true") {
+      setServerError("Your account has been suspended. Contact support for assistance.");
+      sessionStorage.removeItem("suspended");
+    }
   }, [searchParams]);
 
   const validate = useCallback((name: string, value: string): string => {

@@ -25,13 +25,14 @@ export async function requireAdmin(): Promise<Session | null> {
     if (!token) return null;
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; role: string };
     if (decoded.role !== "ADMIN") return null;
-    // Fetch user to get name for audit logging
+    // Fetch user to get name for audit logging + verify not suspended
     await connectDB();
-    const user = await User.findById(decoded.userId).select("firstName lastName").lean();
+    const user = await User.findById(decoded.userId).select("firstName lastName isActive").lean();
+    if (!user || user.isActive === false) return null;
     return {
       user: {
         id: decoded.userId,
-        name: user ? `${user.firstName} ${user.lastName}` : "Admin",
+        name: `${user.firstName} ${user.lastName}`,
         role: "ADMIN",
       },
     } as Session;
@@ -54,6 +55,9 @@ export async function requireUser(): Promise<Session | null> {
   if (!token) return null;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; role: string };
+    await connectDB();
+    const user = await User.findById(decoded.userId).select("isActive").lean();
+    if (!user || user.isActive === false) return null;
     return { user: { id: decoded.userId, role: decoded.role } } as Session;
   } catch {
     return null;

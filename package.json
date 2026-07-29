@@ -7,7 +7,7 @@
     "build": "cross-env NODE_OPTIONS=--dns-result-order=verbatim next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx --env-file=.env.local scripts/seed.ts"
+    "seed": "cross-env NODE_OPTIONS=--dns-result-order=verbatim tsx --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.8",
