@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import EventsMap from "@/components/EventsMap";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/Toast";
 
@@ -17,6 +18,8 @@ interface EventData {
   startTime: string;
   category: string;
   price: number;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 const ITEMS_PER_PAGE = 9;
@@ -108,7 +111,18 @@ export default function EventsPage() {
                 </div>
               ))}
             </div>
-          ) : paginated.length > 0 ? (
+          ) : (
+            <></>
+          )}
+
+          {!loading && (
+            <div className="mb-10">
+              <h2 className="text-2xl font-bold font-headline text-on-surface mb-4">Event Locations</h2>
+              <EventsMap events={filtered} />
+            </div>
+          )}
+
+          {!loading && paginated.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginated.map((event) => (
                 <Link

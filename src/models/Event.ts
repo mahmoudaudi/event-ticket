@@ -16,6 +16,8 @@ const eventSchema = new mongoose.Schema(
     images: [String],
     status: { type: String, enum: ["DRAFT", "PUBLISHED", "CANCELLED"], default: "DRAFT" },
     isFeatured: { type: Boolean, default: false },
+    lat: Number,
+    lng: Number,
     createdBy: { type: mongoose.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

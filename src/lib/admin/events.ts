@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Event, TicketType, Booking, Category } from "@/models";
 import { escapeRegex } from "@/lib/regex";
+import { geocodeAddress } from "@/lib/geocode";
 import type {
   AdminEventListItem,
   AdminEventListResponse,
@@ -151,15 +152,23 @@ export interface EventInput {
   isFeatured?: boolean;
 }
 
+function buildAddress(data: { venue?: string; address?: string; city?: string }): string {
+  return [data.venue, data.address, data.city].filter(Boolean).join(", ");
+}
+
 export async function createAdminEvent(data: EventInput, createdBy: string) {
   await connectDB();
-  const event = await Event.create({ ...data, createdBy });
+  const address = buildAddress(data);
+  const coords = address ? await geocodeAddress(address) : null;
+  const event = await Event.create({ ...data, lat: coords?.lat, lng: coords?.lng, createdBy });
   return event._id.toString();
 }
 
 export async function updateAdminEvent(id: string, data: EventInput) {
   await connectDB();
-  await Event.findByIdAndUpdate(id, data);
+  const address = buildAddress(data);
+  const coords = address ? await geocodeAddress(address) : null;
+  await Event.findByIdAndUpdate(id, { ...data, lat: coords?.lat, lng: coords?.lng });
 }
 
 export interface DeleteEventResult {

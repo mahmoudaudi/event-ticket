@@ -20,6 +20,8 @@ async function enrichEvents(events: any[]) {
         location: [ev.city, ev.address].filter(Boolean).join(", ") || ev.venue || "TBD",
         price: ticketTypes[0]?.price ?? 0,
         img: ev.bannerImage || "",
+        lat: ev.lat ?? null,
+        lng: ev.lng ?? null,
       };
     })
   );
@@ -33,6 +35,7 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get("featured") === "true";
     const popular = searchParams.get("popular") === "true";
     const upcoming = searchParams.get("upcoming") === "true";
+    const all = searchParams.get("all") === "true";
 
     const populate = { path: "categoryId", select: "name" } as const;
     const sort = { eventDate: 1 } as const;
@@ -63,7 +66,9 @@ export async function GET(request: NextRequest) {
     if (featured) filter.isFeatured = true;
     if (upcoming) filter.eventDate = { $gte: new Date() };
 
-    const events = (await Event.find(filter).populate(populate).sort(sort).limit(8).lean()) as any[];
+    const query = Event.find(filter).populate(populate).sort(sort);
+    if (!all) query.limit(8);
+    const events = (await query.lean()) as any[];
     return NextResponse.json({ events: await enrichEvents(events) });
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
