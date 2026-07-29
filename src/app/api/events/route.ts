@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Event, TicketType, Booking } from "@/models";
+import { geocodeAddress } from "@/lib/geocode";
 
 async function enrichEvents(events: any[]) {
+  // Lazy-geocode events missing coordinates (existing pre-feature events)
+  for (const ev of events) {
+    if (!ev.lat && !ev.lng && (ev.venue || ev.city)) {
+      const addr = [ev.venue, ev.address, ev.city].filter(Boolean).join(", ");
+      const coords = await geocodeAddress(addr);
+      if (coords) {
+        await Event.findByIdAndUpdate(ev._id, { lat: coords.lat, lng: coords.lng });
+        ev.lat = coords.lat;
+        ev.lng = coords.lng;
+      }
+    }
+  }
+
   return Promise.all(
     events.map(async (ev: any) => {
       const ticketTypes = (await TicketType.find({ eventId: ev._id })
