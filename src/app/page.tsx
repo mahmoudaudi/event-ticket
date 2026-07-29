@@ -45,7 +45,7 @@ export default function Home() {
   const eventsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/events")
+    fetch("/api/events?all=true")
       .then((r) => r.json())
       .then((d) => { setAllEvents(d.events ?? []); setLoading(false); })
       .catch(() => setLoading(false));
