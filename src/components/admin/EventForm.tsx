@@ -31,6 +31,8 @@ type FormState = {
   images: string[];
   status: "DRAFT" | "PUBLISHED" | "CANCELLED";
   isFeatured: boolean;
+  lat?: number;
+  lng?: number;
 };
 
 const EMPTY_STATE: FormState = {
@@ -69,6 +71,8 @@ export function EventForm({ mode, eventId, categories, initialData }: EventFormP
           images: initialData.images.length > 0 ? initialData.images : initialData.bannerImage ? [initialData.bannerImage] : [],
           status: initialData.status,
           isFeatured: initialData.isFeatured ?? false,
+          lat: initialData.lat ?? undefined,
+          lng: initialData.lng ?? undefined,
         }
       : { ...EMPTY_STATE, categoryId: categories[0]?.id ?? "" }
   );
@@ -88,6 +92,8 @@ export function EventForm({ mode, eventId, categories, initialData }: EventFormP
     const payload = {
       ...form,
       bannerImage: form.images[0] ?? "",
+      lat: form.lat,
+      lng: form.lng,
     };
 
     // Validate with the same schema the API enforces, so mistakes surface

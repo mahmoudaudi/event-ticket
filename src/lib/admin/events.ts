@@ -124,6 +124,8 @@ export async function getAdminEventDetail(id: string): Promise<AdminEventDetail 
     images: event.images ?? [],
     status: event.status,
     isFeatured: event.isFeatured ?? false,
+    lat: event.lat,
+    lng: event.lng,
     ticketTypes: ticketTypes.map((t) => ({
       id: t._id.toString(),
       name: t.name,

@@ -13,7 +13,7 @@ interface LocationPickerProps {
   venue: string;
   address: string;
   city: string;
-  onChange: (fields: { venue: string; address: string; city: string }) => void;
+  onChange: (fields: { venue: string; address: string; city: string; lat?: number; lng?: number }) => void;
 }
 
 export function LocationPicker({ venue, address, city, onChange }: LocationPickerProps) {
@@ -78,7 +78,13 @@ export function LocationPicker({ venue, address, city, onChange }: LocationPicke
         mk.setPosition(place.geometry.location);
         const street = place.address_components?.find((c) => c.types.includes("route"))?.long_name || "";
         const cityComp = place.address_components?.find((c) => c.types.includes("locality"))?.long_name || "";
-        onChange({ venue: place.name || "", address: street, city: cityComp });
+        onChange({
+          venue: place.name || "",
+          address: street,
+          city: cityComp,
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+        });
       });
     }
 
@@ -93,7 +99,7 @@ export function LocationPicker({ venue, address, city, onChange }: LocationPicke
         const street = results[0].address_components?.find((c) => c.types.includes("route"))?.long_name || "";
         const cityComp = results[0].address_components?.find((c) => c.types.includes("locality"))?.long_name || "";
         const name = results[0].address_components?.find((c) => c.types.includes("establishment"))?.long_name || "";
-        onChange({ venue: name || results[0].formatted_address, address: street, city: cityComp });
+        onChange({ venue: name || results[0].formatted_address, address: street, city: cityComp, lat: pos.lat(), lng: pos.lng() });
       });
     });
 
@@ -107,7 +113,7 @@ export function LocationPicker({ venue, address, city, onChange }: LocationPicke
         const street = results[0].address_components?.find((c) => c.types.includes("route"))?.long_name || "";
         const cityComp = results[0].address_components?.find((c) => c.types.includes("locality"))?.long_name || "";
         const name = results[0].address_components?.find((c) => c.types.includes("establishment"))?.long_name || "";
-        onChange({ venue: name || results[0].formatted_address, address: street, city: cityComp });
+        onChange({ venue: name || results[0].formatted_address, address: street, city: cityComp, lat: pos.lat(), lng: pos.lng() });
       });
     });
   }, [loaded]);

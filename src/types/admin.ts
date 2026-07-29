@@ -153,5 +153,7 @@ export interface AdminEventDetail {
   images: string[];
   status: "DRAFT" | "PUBLISHED" | "CANCELLED";
   isFeatured: boolean;
+  lat?: number | null;
+  lng?: number | null;
   ticketTypes: AdminTicketType[];
 }

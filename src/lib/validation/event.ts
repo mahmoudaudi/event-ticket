@@ -15,6 +15,8 @@ export const eventInputSchema = z.object({
   images: z.array(z.string()).optional().default([]),
   status: z.enum(["DRAFT", "PUBLISHED", "CANCELLED"]),
   isFeatured: z.boolean().optional().default(false),
+  lat: z.number().optional().nullable(),
+  lng: z.number().optional().nullable(),
 });
 
 export type EventInputPayload = z.infer<typeof eventInputSchema>;
