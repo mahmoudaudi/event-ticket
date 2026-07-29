@@ -59,7 +59,7 @@ export default function FeaturedCarousel({
             <Link key={ev._id} href={`/events/${ev._id}`} className="min-w-[280px] sm:min-w-[400px] md:min-w-[600px] group block">
               <div className="relative aspect-[16/9] rounded-2xl overflow-hidden mb-4">
                 {ev.img ? (
-                  <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={ev.title} src={ev.img} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/735c00/ffffff?text=Aurum'; }} />
+                  <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={ev.title} src={ev.img} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={(e) => { const l = ev.title.charAt(0).toUpperCase(); (e.target as HTMLImageElement).src = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect fill="#1a1a2e" width="600" height="400"/><text x="300" y="260" font-size="140" fill="#e0e0e0" text-anchor="middle" font-family="Arial,sans-serif">${l}</text></svg>`)}`; }} />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary-container/20 flex items-center justify-center">
                     <span className="material-symbols-outlined text-4xl text-primary/40">image</span>

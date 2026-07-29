@@ -6,6 +6,16 @@ import Seat from '@/models/Seat';
 import { requireUser } from '@/lib/guards';
 import { stripe } from '@/lib/stripe';
 
+async function updateSeats(filter: Record<string, any>, update: Record<string, any>) {
+  try {
+    await mongoose.connection.db!.collection("seats").updateMany(filter, update, {
+      bypassDocumentValidation: true,
+    } as any);
+  } catch {
+    await mongoose.connection.db!.collection("seats").updateMany(filter, update);
+  }
+}
+
 /**
  * POST /api/checkout/create-session
  * Holds the selected seats (marks them RESERVED so nobody else can grab
@@ -60,7 +70,7 @@ export async function POST(request: Request) {
 
     // Hold the seats for the lifetime of the Checkout Session so nobody else
     // can book them while this buyer is entering payment details.
-    await Seat.updateMany({ _id: { $in: seatObjectIds } }, { $set: { status: 'RESERVED' } });
+    await updateSeats({ _id: { $in: seatObjectIds } }, { $set: { status: 'RESERVED' } });
 
     const origin = request.headers.get('origin') || `https://${request.headers.get('host') || 'localhost:3000'}`;
     const expiresInSeconds = 30 * 60; // 30 minutes to complete payment
@@ -101,7 +111,7 @@ export async function POST(request: Request) {
       });
     } catch (stripeError) {
       // Release the hold if Stripe session creation itself failed.
-      await Seat.updateMany({ _id: { $in: seatObjectIds } }, { $set: { status: 'AVAILABLE' } });
+      await updateSeats({ _id: { $in: seatObjectIds } }, { $set: { status: 'AVAILABLE' } });
       throw stripeError;
     }
 

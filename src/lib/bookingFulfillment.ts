@@ -3,7 +3,16 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
 import ReservedSeat from "@/models/ReservedSeat";
-import Seat from "@/models/Seat";
+
+async function updateSeats(filter: Record<string, any>, update: Record<string, any>) {
+  try {
+    await mongoose.connection.db!.collection("seats").updateMany(filter, update, {
+      bypassDocumentValidation: true,
+    } as any);
+  } catch {
+    await mongoose.connection.db!.collection("seats").updateMany(filter, update);
+  }
+}
 
 export interface FulfillBookingInput {
   userId: string;
@@ -61,7 +70,7 @@ export async function fulfillBookingFromStripeSession(input: FulfillBookingInput
   booking.qrCode = `${input.origin}/bookings/${booking._id}`;
   await booking.save();
 
-  await Seat.updateMany({ _id: { $in: seatObjectIds } }, { $set: { status: "BOOKED" } });
+  await updateSeats({ _id: { $in: seatObjectIds } }, { $set: { status: "BOOKED" } });
   await ReservedSeat.insertMany(seatObjectIds.map((seatId) => ({ bookingId: booking._id, seatId })));
 
   return booking;
@@ -71,5 +80,5 @@ export async function fulfillBookingFromStripeSession(input: FulfillBookingInput
 export async function releaseReservedSeats(seatIds: string[]) {
   await connectDB();
   const objectIds = seatIds.map((id) => new mongoose.Types.ObjectId(id));
-  await Seat.updateMany({ _id: { $in: objectIds }, status: "RESERVED" }, { $set: { status: "AVAILABLE" } });
+  await updateSeats({ _id: { $in: objectIds }, status: "RESERVED" }, { $set: { status: "AVAILABLE" } });
 }

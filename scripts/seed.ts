@@ -82,12 +82,13 @@ async function seed() {
     {
       title: "Neon Horizon Tour",
       category: "Concerts",
-      venue: "Crescent Main Hall",
-      city: "Springfield",
-      address: "120 Riverside Ave",
-      lat: 39.7817, lng: -89.6501,
+      venue: "BIEL — Beirut International Exhibition & Leisure Center",
+      city: "Beirut",
+      address: "Emile Lahoud Highway, Furn El Chebak",
+      lat: 33.8938, lng: 35.5018,
       daysOut: 18,
       status: "PUBLISHED",
+      bannerImage: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=400&fit=crop",
       tiers: [
         { name: "General Admission", price: 65, capacity: 300 },
         { name: "VIP", price: 150, capacity: 60 },
@@ -96,12 +97,13 @@ async function seed() {
     {
       title: "Midnight Symphony: Evening Gala",
       category: "Classical",
-      venue: "Crescent Main Hall",
-      city: "Springfield",
-      address: "120 Riverside Ave",
-      lat: 39.7817, lng: -89.6501,
+      venue: "Emile Bustani Auditorium — Al Bustan Hotel",
+      city: "Beit Mery",
+      address: "Al Bustan Road, Beit Mery",
+      lat: 33.8647, lng: 35.5833,
       daysOut: 34,
       status: "PUBLISHED",
+      bannerImage: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=800&h=400&fit=crop",
       tiers: [
         { name: "Standard", price: 89, capacity: 200 },
         { name: "Premium Balcony", price: 149, capacity: 40 },
@@ -110,34 +112,37 @@ async function seed() {
     {
       title: "Stand-Up Spotlight: Live Night",
       category: "Comedy",
-      venue: "Crescent Black Box",
-      city: "Springfield",
-      address: "215 Commerce St",
-      lat: 39.7835, lng: -89.6532,
+      venue: "Metro Al Madina",
+      city: "Beirut",
+      address: "Aresco Center, Clémenceau Street",
+      lat: 33.8972, lng: 35.4813,
       daysOut: 9,
       status: "PUBLISHED",
+      bannerImage: "https://images.unsplash.com/photo-1527224857830-43a7acc85260?w=800&h=400&fit=crop",
       tiers: [{ name: "General Admission", price: 35, capacity: 150 }],
     },
     {
       title: "Chamber Harmony: Vivaldi Reimagined",
       category: "Classical",
-      venue: "Crescent Main Hall",
-      city: "Springfield",
-      address: "120 Riverside Ave",
-      lat: 39.7817, lng: -89.6501,
+      venue: "Byblos Ancient Port",
+      city: "Jbeil",
+      address: "Byblos Archaeological Site",
+      lat: 34.1198, lng: 35.6478,
       daysOut: 52,
       status: "PUBLISHED",
+      bannerImage: "https://images.unsplash.com/photo-1628793075628-7f3c7c1b6c5a?w=800&h=400&fit=crop",
       tiers: [{ name: "General Admission", price: 55, capacity: 220 }],
     },
     {
       title: "Modern Prometheus: A New Play",
       category: "Theater",
-      venue: "Crescent Black Box",
-      city: "Springfield",
-      address: "215 Commerce St",
-      lat: 39.7835, lng: -89.6532,
+      venue: "Théâtre Le Monnot",
+      city: "Beirut",
+      address: "Rue de l'Université Saint-Joseph, Achrafieh",
+      lat: 33.8889, lng: 35.5142,
       daysOut: 27,
       status: "PUBLISHED",
+      bannerImage: "https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&h=400&fit=crop",
       tiers: [
         { name: "General Admission", price: 42, capacity: 120 },
         { name: "Front Row", price: 78, capacity: 24 },
@@ -146,33 +151,35 @@ async function seed() {
     {
       title: "Evening Jazz Gala",
       category: "Concerts",
-      venue: "Crescent Lounge",
-      city: "Springfield",
-      address: "450 Market St",
-      lat: 39.7802, lng: -89.6478,
+      venue: "Zaitunay Bay",
+      city: "Beirut",
+      address: "Beirut Central District",
+      lat: 33.8975, lng: 35.4825,
       daysOut: 41,
       status: "DRAFT",
+      bannerImage: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=800&h=400&fit=crop",
       tiers: [{ name: "General Admission", price: 48, capacity: 90 }],
     },
     {
       title: "Gourmet Workshop",
       category: "Theater",
-      venue: "Crescent Studio",
-      city: "Springfield",
-      address: "88 Arts Plaza",
-      lat: 39.7829, lng: -89.6516,
+      venue: "Bier el-Hilo",
+      city: "Zahle",
+      address: "Zahle Old Town",
+      lat: 33.8483, lng: 35.9077,
       daysOut: -12,
       status: "PUBLISHED",
+      bannerImage: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=400&fit=crop",
       tiers: [{ name: "Workshop Seat", price: 75, capacity: 50 }],
     },
-  ] as const;
+  ];
 
   const events = [];
   const ticketTypesByEvent: Record<string, mongoose.Document[]> = {};
 
   for (const def of eventDefs) {
     const slug = def.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "");
-    const bannerImage = `https://placehold.co/800x400/1a1a2e/e0e0e0?text=${encodeURIComponent(def.title)}`;
+    const bannerImage = def.bannerImage ?? `https://placehold.co/800x400/1a1a2e/e0e0e0?text=${encodeURIComponent(def.title)}`;
     const event = await Event.create({
       title: def.title,
       description:
@@ -213,9 +220,8 @@ async function seed() {
 
   console.log(`Created ${events.length} events with ticket types.`);
 
-  // --- Seats (a small reserved-seating map for the first couple of
-  // published events, to exercise the seat-selection/checkout flow) --------
-  const seatedEvents = events.filter((e) => e.status === "PUBLISHED").slice(0, 2);
+  // --- Seats for all published events --------
+  const seatedEvents = events.filter((e) => e.status === "PUBLISHED");
   const sections = [
     { name: "Floor", rows: ["A", "B"], seatsPerRow: 6, price: 120 },
     { name: "Balcony", rows: ["C", "D"], seatsPerRow: 8, price: 65 },

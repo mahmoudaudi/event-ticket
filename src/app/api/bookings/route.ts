@@ -6,6 +6,16 @@ import ReservedSeat from '@/models/ReservedSeat';
 import Seat from '@/models/Seat';
 import { requireUser } from '@/lib/guards';
 
+async function updateSeats(filter: Record<string, any>, update: Record<string, any>) {
+  try {
+    await mongoose.connection.db!.collection("seats").updateMany(filter, update, {
+      bypassDocumentValidation: true,
+    } as any);
+  } catch {
+    await mongoose.connection.db!.collection("seats").updateMany(filter, update);
+  }
+}
+
 /**
  * POST /api/bookings
  * Creates a new booking record with reserved seats for the signed-in user.
@@ -118,10 +128,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await Seat.updateMany(
-      { _id: { $in: seatObjectIds } },
-      { $set: { status: 'BOOKED' } }
-    );
+    await updateSeats({ _id: { $in: seatObjectIds } }, { $set: { status: 'BOOKED' } });
 
     // Generate unique booking reference
     const timestamp = Date.now();

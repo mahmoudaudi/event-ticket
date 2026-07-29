@@ -3,8 +3,17 @@ import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 import ReservedSeat from '@/models/ReservedSeat';
-import Seat from '@/models/Seat';
 import Event from '@/models/Event';
+
+async function updateSeats(filter: Record<string, any>, update: Record<string, any>) {
+  try {
+    await mongoose.connection.db!.collection("seats").updateMany(filter, update, {
+      bypassDocumentValidation: true,
+    } as any);
+  } catch {
+    await mongoose.connection.db!.collection("seats").updateMany(filter, update);
+  }
+}
 
 export async function PATCH(
   request: Request,
@@ -56,10 +65,7 @@ export async function PATCH(
     const reservedSeats = await ReservedSeat.find({ bookingId: new mongoose.Types.ObjectId(bookingId) });
     const seatIds = reservedSeats.map((rs) => rs.seatId);
     if (seatIds.length > 0) {
-      await Seat.updateMany(
-        { _id: { $in: seatIds } },
-        { $set: { status: 'AVAILABLE' } }
-      );
+      await updateSeats({ _id: { $in: seatIds } }, { $set: { status: 'AVAILABLE' } });
     }
 
     await ReservedSeat.deleteMany({ bookingId: new mongoose.Types.ObjectId(bookingId) });

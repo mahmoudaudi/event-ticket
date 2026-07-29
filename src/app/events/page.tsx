@@ -132,7 +132,7 @@ export default function EventsPage() {
                 >
                   <div className="h-48 bg-surface-container-highest overflow-hidden">
                     {event.img ? (
-                      <img src={event.img} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={event.img} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { const l = event.title.charAt(0).toUpperCase(); (e.target as HTMLImageElement).src = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect fill="#1a1a2e" width="600" height="400"/><text x="300" y="260" font-size="140" fill="#e0e0e0" text-anchor="middle" font-family="Arial,sans-serif">${l}</text></svg>`)}`; }} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-on-surface-variant">
                         <span className="material-symbols-outlined text-4xl">event</span>

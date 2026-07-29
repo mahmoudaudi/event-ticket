@@ -15,7 +15,7 @@ export default function EventHero({ title, category, date, time, location, img, 
     <section className="relative w-full h-[400px] md:h-[614px] overflow-hidden">
       <div className="absolute inset-0 w-full h-full">
         {img ? (
-          <img className="w-full h-full object-cover" alt={title} src={img} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/1200x600/735c00/ffffff?text=Aurum'; }} />
+          <img className="w-full h-full object-cover" alt={title} src={img} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={(e) => { const l = title.charAt(0).toUpperCase(); (e.target as HTMLImageElement).src = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="614" viewBox="0 0 1200 614"><rect fill="#1a1a2e" width="1200" height="614"/><text x="600" y="400" font-size="180" fill="#e0e0e0" text-anchor="middle" font-family="Arial,sans-serif">${l}</text></svg>`)}`; }} />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary-container/20 flex items-center justify-center">
             <span className="material-symbols-outlined text-6xl text-primary/40">image</span>

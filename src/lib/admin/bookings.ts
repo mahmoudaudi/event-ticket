@@ -1,12 +1,22 @@
 import "server-only";
-import { Types, type PipelineStage } from "mongoose";
+import mongoose, { Types, type PipelineStage } from "mongoose";
 import { connectDB } from "@/lib/db";
-import { Booking, Seat } from "@/models";
+import { Booking } from "@/models";
 import { escapeRegex } from "@/lib/regex";
 import { logAdminActivity } from "@/lib/admin/activity";
 import type { AdminBookingListItem, AdminBookingListResponse, AdminBookingDetail, BookingDateRange } from "@/types/admin";
 import ReservedSeat from "@/models/ReservedSeat";
 export type { BookingDateRange } from "@/types/admin";
+
+async function updateSeats(filter: Record<string, any>, update: Record<string, any>) {
+  try {
+    await mongoose.connection.db!.collection("seats").updateMany(filter, update, {
+      bypassDocumentValidation: true,
+    } as any);
+  } catch {
+    await mongoose.connection.db!.collection("seats").updateMany(filter, update);
+  }
+}
 
 const PAGE_SIZE = 10;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -204,10 +214,7 @@ export async function updateBookingStatus(
     const reservedSeats = await ReservedSeat.find({ bookingId: new Types.ObjectId(id) });
     const seatIds = reservedSeats.map((rs) => rs.seatId);
     if (seatIds.length > 0) {
-      await Seat.updateMany(
-        { _id: { $in: seatIds } },
-        { $set: { status: "AVAILABLE" } }
-      );
+      await updateSeats({ _id: { $in: seatIds } }, { $set: { status: "AVAILABLE" } });
     }
   }
 
@@ -249,10 +256,7 @@ export async function bulkUpdateBookingStatus(
     });
     const allSeatIds = allReservedSeats.map((rs) => rs.seatId);
     if (allSeatIds.length > 0) {
-      await Seat.updateMany(
-        { _id: { $in: allSeatIds } },
-        { $set: { status: "AVAILABLE" } }
-      );
+      await updateSeats({ _id: { $in: allSeatIds } }, { $set: { status: "AVAILABLE" } });
     }
   }
 

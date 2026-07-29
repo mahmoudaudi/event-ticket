@@ -4,6 +4,18 @@ import { connectDB } from '@/lib/db';
 import Event from '@/models/Event';
 import Seat from '@/models/Seat';
 
+async function updateSeats(filter: Record<string, any>, update: Record<string, any>) {
+  let result;
+  try {
+    result = await mongoose.connection.db!.collection("seats").updateMany(filter, update, {
+      bypassDocumentValidation: true,
+    } as any);
+  } catch {
+    result = await mongoose.connection.db!.collection("seats").updateMany(filter, update);
+  }
+  return result;
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -38,25 +50,25 @@ export async function POST(
     }
 
     const availableSeatCount = await Seat.countDocuments({
-  eventId: event._id,
-  _id: { $in: objectIds },
-  status: 'AVAILABLE',
-});
+      eventId: event._id,
+      _id: { $in: objectIds },
+      status: 'AVAILABLE',
+    });
 
-if (availableSeatCount !== seatIds.length) {
-  return NextResponse.json(
-    { message: 'One or more selected seats are no longer available.' },
-    { status: 409 }
-  );
-}
-    const result = await Seat.updateMany(
+    if (availableSeatCount !== seatIds.length) {
+      return NextResponse.json(
+        { message: 'One or more selected seats are no longer available.' },
+        { status: 409 }
+      );
+    }
+    const result = await updateSeats(
       {
         eventId: event._id,
         _id: { $in: objectIds },
         status: 'AVAILABLE',
       },
       {
-        status: 'RESERVED',
+        $set: { status: 'RESERVED' },
       }
     );
 

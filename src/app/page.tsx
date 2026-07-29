@@ -170,7 +170,7 @@ export default function Home() {
               {allEvents.slice(0, 8).map((ev, i) => (
                 <Link key={ev._id} href={`/events/${ev._id}`} className={`rounded-2xl bg-surface-container-lowest overflow-hidden shadow-sm hover:shadow-md transition-all duration-500 group scroll-reveal ${i >= 4 ? "reveal-delay-1" : ""}`}>
                   <div className="h-48 overflow-hidden">
-                    {ev.img ? <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={ev.img} alt={ev.title} /> : <div className="w-full h-full bg-gradient-to-br from-primary-container to-tertiary-container flex items-center justify-center"><span className="material-symbols-outlined text-4xl text-on-primary-container">event</span></div>}
+                    {ev.img ? <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={ev.img} alt={ev.title} onError={(e) => { const l = ev.title.charAt(0).toUpperCase(); (e.target as HTMLImageElement).src = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect fill="#1a1a2e" width="600" height="400"/><text x="300" y="260" font-size="140" fill="#e0e0e0" text-anchor="middle" font-family="Arial,sans-serif">${l}</text></svg>`)}`; }} /> : <div className="w-full h-full bg-gradient-to-br from-primary-container to-tertiary-container flex items-center justify-center"><span className="material-symbols-outlined text-4xl text-on-primary-container">event</span></div>}
                   </div>
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-2">

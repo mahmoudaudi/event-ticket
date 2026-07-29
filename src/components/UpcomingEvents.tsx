@@ -31,7 +31,7 @@ export default function UpcomingEvents({ events, loading, upcomingRef }: Upcomin
             <Link key={ev._id} href={`/events/${ev._id}`} className="group bg-surface-container-lowest rounded-2xl overflow-hidden premium-card-shadow">
               <div className="relative h-40">
                 {ev.img ? (
-                  <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={ev.title} src={ev.img} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/735c00/ffffff?text=Aurum'; }} />
+                  <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={ev.title} src={ev.img} crossOrigin="anonymous" referrerPolicy="no-referrer" onError={(e) => { const l = ev.title.charAt(0).toUpperCase(); (e.target as HTMLImageElement).src = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect fill="#1a1a2e" width="600" height="400"/><text x="300" y="260" font-size="140" fill="#e0e0e0" text-anchor="middle" font-family="Arial,sans-serif">${l}</text></svg>`)}`; }} />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary-container/20 flex items-center justify-center">
                     <span className="material-symbols-outlined text-3xl text-primary/40">image</span>
